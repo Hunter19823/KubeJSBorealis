@@ -3,6 +3,7 @@ package pie.ilikepiefoo2.kubejsborealis;
 import pie.ilikepiefoo2.borealis.page.HTTPWebPage;
 import pie.ilikepiefoo2.borealis.tag.Tag;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,12 +31,16 @@ public class ClassPage extends HTTPWebPage {
         Tag classTag = body.h3(this.subject.toGenericString());
         if(this.subject.getSuperclass() != null)
         {
-            if(this.subject.getSuperclass().isInterface()) {
-                classTag.text(" extends ");
-            }else{
-                classTag.text(" implements ");
-            }
+            classTag.text(" extends ");
             linkType(classTag,this.subject.getSuperclass());
+            if(this.subject.getInterfaces().length > 0) {
+                classTag.text(" implements ");
+                for (Class<?> interfaces : this.subject.getInterfaces()) {
+                    linkType(classTag, interfaces);
+                    classTag.text(", ");
+                }
+            }
+
         }
         if(this.subject.getEnclosingClass() != null) {
             linkType(body.h3("Enclosing Class: "),this.subject.getEnclosingClass());
@@ -48,6 +53,7 @@ public class ClassPage extends HTTPWebPage {
         Tag constructorTable = body.table();
         Tag firstRow = constructorTable.tr();
         firstRow.th().a("Constructors","#constructors");
+        firstRow.th().text("Annotations");
 
         List<Constructor> constructors = Arrays.asList(this.subject.getDeclaredConstructors());
         Collections.sort(constructors, Comparator.comparing(Constructor::getName));
@@ -60,6 +66,7 @@ public class ClassPage extends HTTPWebPage {
         firstRow = fieldTable.tr();
         firstRow.th().a("Fields","#fields");
         firstRow.th().text("Type");
+        firstRow.th().text("Annotations");
 
 
         List<Field> fields = Arrays.asList(this.subject.getDeclaredFields());
@@ -72,7 +79,7 @@ public class ClassPage extends HTTPWebPage {
         Tag methodTable = body.table();
         firstRow = methodTable.tr();
         firstRow.th().a("Methods","#methods");
-        firstRow.th().text("Returns");
+        firstRow.th().text("Annotations");
 
 
         List<Method> methods = Arrays.asList(this.subject.getDeclaredMethods());
@@ -84,7 +91,7 @@ public class ClassPage extends HTTPWebPage {
         body.br();
     }
 
-    public static Tag linkType(Tag previous,Class<?> aclass){
+    public static Tag linkType(Tag previous, Class<?> aclass){
         if(!aclass.isPrimitive() && !aclass.isArray()){
             previous.a(" "+aclass.getSimpleName()+" ",homeURL+aclass.getName());
         }else{
@@ -108,11 +115,23 @@ public class ClassPage extends HTTPWebPage {
         linkType(row.td().text(Modifier.toString(field.getModifiers())+" "),field.getType()).text(" "+field.getName());
 
         linkType(row.td(),field.getType());
+
+        StringBuilder builder = new StringBuilder();
+        for(Annotation annotation : field.getDeclaredAnnotations()) {
+            builder.append(annotation.toString());
+            builder.append("\n");
+        }
+        row.td().text(builder.toString());
     }
     public static void addMethod(Tag table, Method method)
     {
         Tag row = table.tr();
         Tag methodTag = row.td().text(Modifier.toString(method.getModifiers())+" ");
+        if(!method.getReturnType().getTypeName().equals(" void ")){
+            linkType(methodTag,method.getReturnType());
+        }else{
+            row.td().text("void");
+        }
         if(method.getName().contains("lambda$")){
             methodTag = methodTag.text(method.getName().substring(7,method.getName().indexOf('$',7)));
         }else {
@@ -124,11 +143,14 @@ public class ClassPage extends HTTPWebPage {
             methodTag = methodTag.text(parameter.getName()+",");
         }
         methodTag.text(")");
-        if(!method.getReturnType().getTypeName().equals("void")){
-            linkType(row.td(),method.getReturnType());
-        }else{
-            row.td().text("void");
+
+
+        StringBuilder builder = new StringBuilder();
+        for(Annotation annotation : method.getDeclaredAnnotations()) {
+            builder.append(annotation.toString());
+            builder.append("\n");
         }
+        row.td().text(builder.toString());
     }
     public static void addConstructor(Tag table, Constructor constructor)
     {
@@ -143,5 +165,12 @@ public class ClassPage extends HTTPWebPage {
             methodTag = methodTag.text(parameter.getName()+",");
         }
         methodTag.text(")");
+
+        StringBuilder builder = new StringBuilder();
+        for(Annotation annotation : constructor.getDeclaredAnnotations()) {
+            builder.append(annotation.toString());
+            builder.append("\n");
+        }
+        methodTag.td().text(builder.toString());
     }
 }
