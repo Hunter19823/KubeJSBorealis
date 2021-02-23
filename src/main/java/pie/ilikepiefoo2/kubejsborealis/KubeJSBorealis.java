@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 import org.reflections.Reflections;
 import org.reflections.scanners.ResourcesScanner;
 import org.reflections.scanners.SubTypesScanner;
+import pie.ilikepiefoo2.kubejsborealis.pages.KubeJSHomePage;
 
 import java.util.Set;
 
@@ -21,6 +22,7 @@ public class KubeJSBorealis {
         MinecraftForge.EVENT_BUS.addListener(KubeJSEventHandler::homePageEvent);
         MinecraftForge.EVENT_BUS.addListener(KubeJSEventHandler::onPageEvent);
         MinecraftForge.EVENT_BUS.addListener(KubeJSEventHandler::onServerStart);
+        MinecraftForge.EVENT_BUS.addListener(KubeJSEventHandler::bindingsEvent);
     }
 
     /*

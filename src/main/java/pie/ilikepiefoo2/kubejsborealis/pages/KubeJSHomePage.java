@@ -1,4 +1,4 @@
-package pie.ilikepiefoo2.kubejsborealis;
+package pie.ilikepiefoo2.kubejsborealis.pages;
 
 import dev.latvian.kubejs.KubeJS;
 import dev.latvian.kubejs.script.ScriptManager;
@@ -72,6 +72,7 @@ public class KubeJSHomePage extends HTTPWebPage {
     {
         if(instance == null)
         {
+            loadBindings();
             instance = new KubeJSHomePage();
         }
         return instance;
