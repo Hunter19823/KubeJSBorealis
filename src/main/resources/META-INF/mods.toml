@@ -12,6 +12,8 @@ authors="ILIKEPIEFOO2"
 description='''
 KubeJS Integration for the mod Borealis.
 Adds a form of documentation to KubeJS via local server.
+As well as adds Borealis Webpage support to KubeJS.
+Allowing for custom webpages to be created via kubeJS script.
 '''
 
 [[dependencies.kubejsborealis]]

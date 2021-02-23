@@ -1,5 +1,7 @@
 package pie.ilikepiefoo2.kubejsborealis;
 
+import dev.latvian.kubejs.script.BindingsEvent;
+import dev.latvian.kubejs.script.ScriptType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -10,11 +12,18 @@ import pie.ilikepiefoo2.borealis.BorealisHomePageEvent;
 import pie.ilikepiefoo2.borealis.BorealisPageEvent;
 import pie.ilikepiefoo2.borealis.page.HomePageEntry;
 import pie.ilikepiefoo2.borealis.page.WebPage;
+import pie.ilikepiefoo2.kubejsborealis.builder.BorealisHomePageEntryBuilder;
+import pie.ilikepiefoo2.kubejsborealis.builder.HTTPWebPageBuilder;
+import pie.ilikepiefoo2.kubejsborealis.builder.JSONWebPageBuilder;
+import pie.ilikepiefoo2.kubejsborealis.events.BorealisHomePageEventJS;
+import pie.ilikepiefoo2.kubejsborealis.events.BorealisPageEventJS;
+import pie.ilikepiefoo2.kubejsborealis.pages.ClassPage;
+import pie.ilikepiefoo2.kubejsborealis.pages.KubeJSHomePage;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static pie.ilikepiefoo2.kubejsborealis.KubeJSHomePage.homeURI;
+import static pie.ilikepiefoo2.kubejsborealis.pages.KubeJSHomePage.homeURI;
 
 @Mod.EventBusSubscriber(Dist.DEDICATED_SERVER)
 public class KubeJSEventHandler {
@@ -25,6 +34,7 @@ public class KubeJSEventHandler {
     public static void homePageEvent(BorealisHomePageEvent event)
     {
         event.add(new HomePageEntry("KubeJS Documentaion",homeURI,"https://kubejs.latvian.dev/logo_title.png"));
+        new BorealisHomePageEventJS(event).post(ScriptType.SERVER,"borealis.homepage");
     }
 
     @SubscribeEvent
@@ -53,7 +63,8 @@ public class KubeJSEventHandler {
                     LOGGER.error(ex);
                 }
             }
-
+        }else{
+            new BorealisPageEventJS(event).post(ScriptType.SERVER,"borealis.page");
         }
     }
 
@@ -62,6 +73,24 @@ public class KubeJSEventHandler {
     @SubscribeEvent
     public static void onServerStart(FMLServerStartingEvent event)
     {
-        KubeJSHomePage.loadBindings();
+        //KubeJSHomePage.loadBindings();
+    }
+
+    @SubscribeEvent
+    public static void bindingsEvent(BindingsEvent event)
+    {
+        if(event.type == ScriptType.SERVER)
+        {
+            event.add("borealis",new BorealisWrapper());
+            event.add("Borealis",new BorealisWrapper());
+            event.addFunction("HTMLPage", args -> new HTTPWebPageBuilder());
+            event.addFunction("HTTPWebPage", args -> new HTTPWebPageBuilder());
+            event.addFunction("HttpWebPage", args -> new HTTPWebPageBuilder());
+            event.addFunction("JSONWebPage", args -> new JSONWebPageBuilder());
+            event.addFunction("JsonWebPage", args -> new JSONWebPageBuilder());
+            event.addFunction("HomePageEntry", args -> args.length == 2 ? new BorealisHomePageEntryBuilder((String) args[0],(String) args[1]) : new BorealisHomePageEntryBuilder((String) args[0],(String) args[1],(String) args[2]));
+            event.addFunction("HomepageEntry", args -> args.length == 2 ? new BorealisHomePageEntryBuilder((String) args[0],(String) args[1]) : new BorealisHomePageEntryBuilder((String) args[0],(String) args[1],(String) args[2]));
+            event.addFunction("Homepageentry", args -> args.length == 2 ? new BorealisHomePageEntryBuilder((String) args[0],(String) args[1]) : new BorealisHomePageEntryBuilder((String) args[0],(String) args[1],(String) args[2]));
+        }
     }
 }
