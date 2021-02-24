@@ -2,6 +2,7 @@ package pie.ilikepiefoo2.kubejsborealis;
 
 import dev.latvian.kubejs.script.BindingsEvent;
 import dev.latvian.kubejs.script.ScriptType;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -11,8 +12,10 @@ import org.apache.logging.log4j.Logger;
 import pie.ilikepiefoo2.borealis.BorealisHomePageEvent;
 import pie.ilikepiefoo2.borealis.BorealisPageEvent;
 import pie.ilikepiefoo2.borealis.page.HomePageEntry;
+import pie.ilikepiefoo2.borealis.page.PageType;
 import pie.ilikepiefoo2.borealis.page.WebPage;
 import pie.ilikepiefoo2.kubejsborealis.builder.BorealisHomePageEntryBuilder;
+import pie.ilikepiefoo2.kubejsborealis.builder.CustomWebPageBuilder;
 import pie.ilikepiefoo2.kubejsborealis.builder.HTTPWebPageBuilder;
 import pie.ilikepiefoo2.kubejsborealis.builder.JSONWebPageBuilder;
 import pie.ilikepiefoo2.kubejsborealis.events.BorealisHomePageEventJS;
@@ -20,6 +23,8 @@ import pie.ilikepiefoo2.kubejsborealis.events.BorealisPageEventJS;
 import pie.ilikepiefoo2.kubejsborealis.pages.ClassPage;
 import pie.ilikepiefoo2.kubejsborealis.pages.KubeJSHomePage;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -83,6 +88,21 @@ public class KubeJSEventHandler {
         {
             event.add("borealis",new BorealisWrapper());
             event.add("Borealis",new BorealisWrapper());
+            event.add("PageType",PageType.class);
+            for(PageType type : PageType.values())
+                event.addConstant(type.name().toUpperCase(),type);
+            event.add("HttpResponseStatus", HttpResponseStatus.class);
+            for(Field field : HttpResponseStatus.class.getDeclaredFields())
+                if(Modifier.isPublic(field.getModifiers()) && Modifier.isStatic(field.getModifiers()) && Modifier.isFinal(field.getModifiers())) {
+                    try {
+                        event.addConstant(field.getName().toUpperCase(),field.get(null));
+                    } catch (IllegalAccessException e) {
+                        LOGGER.error(e);
+                    }
+                }
+
+            event.addFunction("CustomPage", args -> new CustomWebPageBuilder());
+            event.addFunction("CustomWebPage", args -> new CustomWebPageBuilder());
             event.addFunction("HTMLPage", args -> new HTTPWebPageBuilder());
             event.addFunction("HTTPWebPage", args -> new HTTPWebPageBuilder());
             event.addFunction("HttpWebPage", args -> new HTTPWebPageBuilder());

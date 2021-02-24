@@ -1,6 +1,7 @@
 package pie.ilikepiefoo2.kubejsborealis.builder;
 
 import pie.ilikepiefoo2.borealis.page.HTTPWebPage;
+import pie.ilikepiefoo2.borealis.page.WebPage;
 import pie.ilikepiefoo2.borealis.tag.Tag;
 
 import java.util.function.Consumer;
@@ -12,7 +13,7 @@ public class HTTPWebPageBuilder implements WebPageBuilder<HTTPWebPage> {
     public String title = null;
     public String description = null;
     public boolean backButton = false;
-    //public boolean isAlwaysDirty = true;
+    public boolean isAlwaysDirty = true;
 
     public HTTPWebPageBuilder icon(String icon)
     {
@@ -49,7 +50,7 @@ public class HTTPWebPageBuilder implements WebPageBuilder<HTTPWebPage> {
         this.backButton = true;
         return this;
     }
-    /*
+
     public HTTPWebPageBuilder markAlwaysDirty()
     {
         this.isAlwaysDirty = true;
@@ -60,7 +61,7 @@ public class HTTPWebPageBuilder implements WebPageBuilder<HTTPWebPage> {
         this.isAlwaysDirty = false;
         return this;
     }
-     */
+
     public HTTPWebPage build()
     {
         final HTTPWebPage webPage = new HTTPWebPage(){
@@ -104,6 +105,12 @@ public class HTTPWebPageBuilder implements WebPageBuilder<HTTPWebPage> {
                     body.accept(tag);
             }
         };
+        if(isAlwaysDirty){
+            webPage.alwaysDirty();
+        }else{
+            webPage.neverDirty();
+        }
+
         return webPage;
     }
 

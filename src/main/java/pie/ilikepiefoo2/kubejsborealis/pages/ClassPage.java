@@ -10,7 +10,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import static pie.ilikepiefoo2.kubejsborealis.pages.KubeJSHomePage.homeURL;
+import static pie.ilikepiefoo2.kubejsborealis.pages.KubeJSHomePage.*;
 
 public class ClassPage extends HTTPWebPage {
     private final Class subject;
@@ -29,6 +29,7 @@ public class ClassPage extends HTTPWebPage {
         body.h1("").a("KubeJS Documentation", homeURL);
         body.br();
         Tag classTag = body.h3(this.subject.toGenericString());
+
         if(this.subject.getSuperclass() != null)
         {
             classTag.text(" extends ");
@@ -91,6 +92,7 @@ public class ClassPage extends HTTPWebPage {
 
             body.br();
         }
+        body.script(getTableSortScript());
     }
 
     public static Tag linkType(Tag previous, Class<?> aclass){
@@ -118,7 +120,13 @@ public class ClassPage extends HTTPWebPage {
     {
         Tag row = table.tr();
         addDataModifiers(row,field.getModifiers());
-        row.attr("data-return-type",cleanseLambdaName(field.getName()));
+        row.attr("data-name",cleanseLambdaName(field.getName()));
+
+        if(field.getType().isArray()) {
+            row.attr("data-return-type", field.getType().getComponentType().getSimpleName());
+        }else{
+            row.attr("data-return-type", field.getType().getSimpleName());
+        }
         Tag td = row.td();
 
         String toolTip = compileAnnotationToolTip(field.getAnnotations());

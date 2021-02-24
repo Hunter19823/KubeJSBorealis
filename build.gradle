@@ -8,7 +8,7 @@ buildscript {
     dependencies {
         classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
         classpath 'com.wynprice.cursemaven:CurseMaven:1.2.+'
-        classpath group: 'gradle.plugin.com.matthewprenger', name: 'CurseGradle', version: '1.+'
+        classpath group: 'gradle.plugin.com.matthewprenger', name: 'CurseGradle', version: '1.4.+'
     }
 }
 
@@ -102,12 +102,13 @@ repositories {
 }
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-    compileOnly ("curse.maven:${borealis}:${borealis_version}")
-    compileOnly ("curse.maven:${kubejs}:${kubejs_version}")
-    compileOnly ("curse.maven:${rhino}:${rhino_version}")
+    compile ("curse.maven:${borealis}:${borealis_version}")
+    compile ("curse.maven:${kubejs}:${kubejs_version}")
+    compile ("curse.maven:${rhino}:${rhino_version}")
 
     compile "org.reflections:reflections:0.9.11"
-
+    //compileOnly ("https://edge.forgecdn.net/files/3214/956/Borealis-1.1.6.jar")
+    //compileOnly ("curse.maven:borealis-443070:3214956");
     //compile (fg.deobf("curse.maven:${rhino}:${rhino_version}"))
     /*
     compileOnly ("curse.maven:${ftbquests}:${ftbquests_version}")
