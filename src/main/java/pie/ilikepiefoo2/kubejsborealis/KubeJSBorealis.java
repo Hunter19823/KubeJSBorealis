@@ -2,27 +2,58 @@ package pie.ilikepiefoo2.kubejsborealis;
 
 import dev.latvian.kubejs.event.EventJS;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.event.server.FMLServerAboutToStartEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.reflections.Reflections;
 import org.reflections.scanners.ResourcesScanner;
 import org.reflections.scanners.SubTypesScanner;
 import pie.ilikepiefoo2.kubejsborealis.pages.KubeJSHomePage;
+import pie.ilikepiefoo2.kubejsborealis.util.ReflectionHandler;
 
+import java.util.List;
 import java.util.Set;
 
 @Mod("kubejsborealis")
 public class KubeJSBorealis {
-    private static final Logger LOGGER = LogManager.getLogger();
+    private static final Logger LOGGER = LogManager.getLogger(KubeJSBorealis.class);
     public static final String MOD_NAME = "KubeJSBorealis";
     public static final String MOD_ID = "kubejsborealis";
+    private static ReflectionHandler reflectionHandler;
+    private static List<Class> eventJSes;
+
     public KubeJSBorealis()
     {
         MinecraftForge.EVENT_BUS.addListener(KubeJSEventHandler::homePageEvent);
         MinecraftForge.EVENT_BUS.addListener(KubeJSEventHandler::onPageEvent);
         MinecraftForge.EVENT_BUS.addListener(KubeJSEventHandler::onServerStart);
         MinecraftForge.EVENT_BUS.addListener(KubeJSEventHandler::bindingsEvent);
+        MinecraftForge.EVENT_BUS.addListener(this::fmlServerStarting);
+    }
+
+
+    private void fmlServerStarting(FMLServerAboutToStartEvent event)
+    {
+        LOGGER.info("Forge Setup event starting...");
+        LOGGER.info("Setting up Reflection Handler...");
+        reflectionHandler = new ReflectionHandler();
+        LOGGER.info("Reflection Handler setup. Now collecting all EventJSes");
+        eventJSes = reflectionHandler.applyFilter(possibleClass -> EventJS.class.isAssignableFrom(possibleClass));
+        LOGGER.info("Events Found >> {} ",eventJSes.size());
+    }
+
+    public static List<Class> getAllJSEvents()
+    {
+        return eventJSes;
+    }
+
+    public static ReflectionHandler getReflectionHandler()
+    {
+        return reflectionHandler;
     }
 
     /*

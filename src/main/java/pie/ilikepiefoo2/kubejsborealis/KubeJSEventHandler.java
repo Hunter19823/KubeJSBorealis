@@ -6,6 +6,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,6 +23,7 @@ import pie.ilikepiefoo2.kubejsborealis.events.BorealisHomePageEventJS;
 import pie.ilikepiefoo2.kubejsborealis.events.BorealisPageEventJS;
 import pie.ilikepiefoo2.kubejsborealis.pages.ClassPage;
 import pie.ilikepiefoo2.kubejsborealis.pages.KubeJSHomePage;
+import pie.ilikepiefoo2.kubejsborealis.util.ReflectionHandler;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -58,14 +60,19 @@ public class KubeJSEventHandler {
                     if(knownPages.containsKey(c)){
                         event.returnPage(knownPages.get(c));
                     }else {
-                        WebPage page = new ClassPage(c);
+                        ClassPage page = new ClassPage(c);
+                        page.neverDirty();
                         knownPages.put(c,page);
                         event.returnPage(page);
                     }
                 }
                 catch (Exception ex)
                 {
-                    LOGGER.error(ex);
+                    LOGGER.warn(ex);
+                }
+                catch (Error error)
+                {
+                    LOGGER.error(error);
                 }
             }
         }else{
@@ -113,4 +120,6 @@ public class KubeJSEventHandler {
             event.addFunction("Homepageentry", args -> args.length == 2 ? new BorealisHomePageEntryBuilder((String) args[0],(String) args[1]) : new BorealisHomePageEntryBuilder((String) args[0],(String) args[1],(String) args[2]));
         }
     }
+
+
 }

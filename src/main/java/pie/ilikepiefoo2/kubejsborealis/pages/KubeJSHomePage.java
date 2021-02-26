@@ -12,6 +12,7 @@ import org.apache.logging.log4j.Logger;
 import pie.ilikepiefoo2.borealis.Borealis;
 import pie.ilikepiefoo2.borealis.page.HTTPWebPage;
 import pie.ilikepiefoo2.borealis.tag.Tag;
+import pie.ilikepiefoo2.kubejsborealis.KubeJSBorealis;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,6 +24,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
+
+import static pie.ilikepiefoo2.kubejsborealis.pages.ClassPage.compileAnnotationToolTip;
+import static pie.ilikepiefoo2.kubejsborealis.pages.ClassPage.linkType;
 
 public class KubeJSHomePage extends HTTPWebPage {
     private static final Logger LOGGER = Borealis.LOGGER;
@@ -42,16 +46,32 @@ public class KubeJSHomePage extends HTTPWebPage {
                 .a("here","/kubejs_auto_docs/dev.latvian.kubejs.event.EventsJS")
                 .text(". Due to technical issues I will need to manually add events to this page.");
          */
-        /*
+
         body.br();
         body.h1("").a("KubeJS Documented Events","#events");
         body.br();
-        Tag table = body.table();
-        Tag header = table.tr();
-        header.th().text("KJS Name");
-        header.th().text("EventJS");
-        header.th().text("Scope");
-         */
+
+        if(KubeJSBorealis.getAllJSEvents().size() > 0) {
+            Tag table = body.table();
+            Tag header = table.tr();
+            header.th().text("KJS Name");
+            header.th().text("EventJS");
+            KubeJSBorealis.getAllJSEvents().forEach(
+                    eventClass ->
+                    {
+                        Tag previous = table.tr();
+                        previous.attr("data-name",ClassPage.cleanseLambdaName(eventClass.getSimpleName()));
+                        previous.attr("data-package-name",eventClass.getPackage().getName());
+                        String toolTip = compileAnnotationToolTip(eventClass.getAnnotations());
+                        if(toolTip.length() > 0) {
+                            linkType(previous.td(), eventClass).tooltip(toolTip);
+                        }else{
+                            linkType(previous.td(), eventClass);
+                        }
+                        previous.td().span(eventClass.getName());
+                    }
+            );
+        }
         if(global.size() > 0) {
             body.br();
             addTable(body, "Global Objects", global);
@@ -97,6 +117,7 @@ public class KubeJSHomePage extends HTTPWebPage {
         {
             loadBindings();
             instance = new KubeJSHomePage();
+            instance.neverDirty();
         }
         return instance;
     }

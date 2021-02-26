@@ -28,20 +28,21 @@ public class ClassPage extends HTTPWebPage {
         body.br();
         body.h1("").a("KubeJS Documentation", homeURL);
         body.br();
-        Tag classTag = body.h3(this.subject.toGenericString());
-
+        Tag classTag = body.h3("");
+        classTag.span(Modifier.toString(this.subject.getModifiers())+" "+this.subject.getPackage().getName()+".");
+        linkType(classTag,this.subject);
         if(this.subject.getSuperclass() != null)
         {
             classTag.text(" extends ");
             linkType(classTag,this.subject.getSuperclass());
             if(this.subject.getInterfaces().length > 0) {
                 classTag.text(" implements ");
-                for (Class<?> interfaces : this.subject.getInterfaces()) {
-                    linkType(classTag, interfaces);
-                    classTag.text(", ");
+                for(int i=0; i<this.subject.getInterfaces().length; i++){
+                    linkType(classTag, this.subject.getInterfaces()[i]);
+                    if(i != this.subject.getInterfaces().length -1)
+                        classTag.span(", ");
                 }
             }
-
         }
         if(this.subject.getEnclosingClass() != null) {
             linkType(body.h3("Enclosing Class: "),this.subject.getEnclosingClass());
@@ -97,40 +98,39 @@ public class ClassPage extends HTTPWebPage {
 
     public static Tag linkType(Tag previous, Class<?> aclass){
         if(!aclass.isPrimitive() && !aclass.isArray()){
-            previous.a(" "+aclass.getSimpleName()+" ",homeURL+aclass.getName());
+            return previous.a(aclass.getSimpleName(),homeURL+aclass.getName());
         }else{
             if(aclass.isArray()){
-                linkType(previous,aclass.getComponentType()).text("[] ");
+                linkType(previous,aclass.getComponentType());
+                return previous.text("[]");
             }else {
-                previous.text(" " + aclass.getSimpleName() + " ");
+                return previous.text(aclass.getSimpleName());
             }
         }
-        return previous;
     }
     public static void linkParameters(Tag previous, Parameter[] parameters){
         for(int i=0; i<parameters.length; i++){
             Parameter parameter = parameters[i];
-            previous = linkType(previous,parameter.getType());
+            previous.text(" ");
+            linkType(previous,parameter.getType());
+            previous.text(" ");
+            previous.text(parameter.getName());
             if(i != parameters.length-1)
-                previous = previous.text(parameter.getName()+",");
+                previous.text(",");
         }
     }
 
     public static void addField(Tag table, Field field)
     {
         Tag row = table.tr();
-        addDataModifiers(row,field.getModifiers());
-        row.attr("data-name",cleanseLambdaName(field.getName()));
+        addDataAttributes(row,field);
 
-        if(field.getType().isArray()) {
-            row.attr("data-return-type", field.getType().getComponentType().getSimpleName());
-        }else{
-            row.attr("data-return-type", field.getType().getSimpleName());
-        }
         Tag td = row.td();
 
         String toolTip = compileAnnotationToolTip(field.getAnnotations());
-        Tag name = linkType(td.text(Modifier.toString(field.getModifiers())+" "),field.getType()).span(" " + field.getName());
+        Tag name = td.text(Modifier.toString(field.getModifiers())+" ");
+        linkType(name,field.getType());
+        name.span(" " + field.getName());
         if(toolTip.length() > 0)
             name.tooltip(toolTip);
 
@@ -139,26 +139,18 @@ public class ClassPage extends HTTPWebPage {
     public static void addMethod(Tag table, Method method)
     {
         Tag row = table.tr();
-        addDataModifiers(row,method.getModifiers());
+        addDataAttributes(row,method);
 
         Tag methodTag = row.td();
-
         methodTag.text(Modifier.toString(method.getModifiers())+" ");
 
         if(!method.getReturnType().getTypeName().equals(" void ")){
-            if(method.getReturnType().isArray()) {
-                row.attr("data-return-type", method.getReturnType().getComponentType().getSimpleName());
-            }else{
-                row.attr("data-return-type", method.getReturnType().getSimpleName());
-            }
-            linkType(methodTag,method.getReturnType());
+            linkType(methodTag,method.getReturnType()).text(" ");
         }else{
-            row.attr("data-return-type", "void");
             methodTag.text("void");
         }
         String methodName = cleanseLambdaName(method.getName());
-        row.attr("data-name",methodName);
-        row.attr("data-parameter-count",method.getParameterCount()+"");
+
 
         String toolTip = compileAnnotationToolTip(method.getAnnotations());
         if(toolTip.length() > 0) {
@@ -177,11 +169,9 @@ public class ClassPage extends HTTPWebPage {
     {
         Tag methodTag;
         Tag row = table.tr();
-        addDataModifiers(row,constructor.getModifiers());
+        addDataAttributes(row,constructor);
         String constructorName = cleanseLambdaName(constructor.getName());
 
-        row.attr("data-return-type",constructorName);
-        row.attr("data-parameter-count",constructor.getParameterCount()+"");
 
         methodTag = row.td().span(constructorName);
 
@@ -210,7 +200,37 @@ public class ClassPage extends HTTPWebPage {
             return name;
         }
     }
-    public static void addDataModifiers(Tag row, int mods)
+    public static void addDataAttributes(Tag row, Constructor constructor){
+        row.attr("data-name",constructor.getName());
+        row.attr("data-parameters-count",constructor.getParameterCount()+"");
+        addDataAttributes(row,constructor.getModifiers());
+    }
+    public static void addDataAttributes(Tag row, Method method){
+        row.attr("data-name",method.getName());
+        row.attr("data-return-type-generic",method.getGenericReturnType().getTypeName());
+        row.attr("data-parameters-count",method.getParameterCount()+"");
+        addDataAttribute(row,"data-return-type", method.getReturnType());
+        addDataAttributes(row,method.getModifiers());
+    }
+    public static void addDataAttributes(Tag row, Field field){
+        row.attr("data-name",field.getName());
+        row.attr("data-return-type-generic",field.getGenericType().getTypeName());
+        addDataAttribute(row,"data-return-type", field.getType());
+        addDataAttributes(row,field.getModifiers());
+    }
+    public static void addDataAttribute(Tag row, String key, Class type)
+    {
+        if(!type.getTypeName().equals(Void.TYPE.getTypeName())){
+            if (type.isArray()) {
+                row.attr(key, type.getComponentType().getSimpleName()+"[]");
+            } else {
+                row.attr(key, type.getSimpleName());
+            }
+        }else{
+            row.attr(key, "void");
+        }
+    }
+    public static void addDataAttributes(Tag row, int mods)
     {
         if(Modifier.isPublic(mods))
             row.attr("data-access","public");
@@ -218,11 +238,37 @@ public class ClassPage extends HTTPWebPage {
             row.attr("data-access","private");
         if(Modifier.isProtected(mods))
             row.attr("data-access","protected");
-        if(Modifier.isFinal(mods))
-            row.attr("data-final","true");
-        if(Modifier.isStatic(mods))
-            row.attr("data-static","true");
         if(Modifier.isAbstract(mods))
-            row.attr("data-abstract","true");
+            row.attr("data-access", "abstract");
+        if(Modifier.isFinal(mods)){
+            row.attr("data-final","true");
+        }else{
+            row.attr("data-final", "false");
+        }
+        if(Modifier.isStatic(mods)){
+            row.attr("data-static","true");
+        }else{
+            row.attr("data-static", "false");
+        }
+        if(Modifier.isTransient(mods)) {
+            row.attr("data-transient", "true");
+        }else{
+            row.attr("data-transient", "false");
+        }
+        if(Modifier.isSynchronized(mods)) {
+            row.attr("data-synchronized", "true");
+        }else{
+            row.attr("data-synchronized", "false");
+        }
+        if(Modifier.isStrict(mods)) {
+            row.attr("data-strict", "true");
+        }else{
+            row.attr("data-strict", "false");
+        }
+        if(Modifier.isVolatile(mods)) {
+            row.attr("data-volatile", "true");
+        }else{
+            row.attr("data-volatile", "false");
+        }
     }
 }
