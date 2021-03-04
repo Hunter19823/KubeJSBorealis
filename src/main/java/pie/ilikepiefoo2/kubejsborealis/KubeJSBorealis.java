@@ -33,15 +33,17 @@ public class KubeJSBorealis {
         MinecraftForge.EVENT_BUS.addListener(KubeJSEventHandler::onServerStart);
         MinecraftForge.EVENT_BUS.addListener(KubeJSEventHandler::bindingsEvent);
         MinecraftForge.EVENT_BUS.addListener(this::fmlServerStarting);
+        LOGGER.info("Setting up Reflection Handler... (This may take a while)");
+        reflectionHandler = new ReflectionHandler();
+        LOGGER.info("Finished setting up Reflection Handler.");
     }
 
 
     private void fmlServerStarting(FMLServerAboutToStartEvent event)
     {
-        LOGGER.info("Forge Setup event starting...");
-        LOGGER.info("Setting up Reflection Handler...");
-        reflectionHandler = new ReflectionHandler();
-        LOGGER.info("Reflection Handler setup. Now collecting all EventJSes");
+        LOGGER.info("Configuring ReflectionHandler to current thread...");
+        reflectionHandler.configureToCurrentThread();
+        LOGGER.info("Reflection Handler configured. Now collecting all EventJSes");
         eventJSes = reflectionHandler.applyFilter(possibleClass -> EventJS.class.isAssignableFrom(possibleClass));
         LOGGER.info("Events Found >> {} ",eventJSes.size());
     }

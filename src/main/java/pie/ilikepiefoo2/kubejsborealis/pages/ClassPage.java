@@ -1,5 +1,7 @@
 package pie.ilikepiefoo2.kubejsborealis.pages;
 
+import com.google.common.reflect.TypeParameter;
+import org.apache.logging.log4j.LogManager;
 import pie.ilikepiefoo2.borealis.page.HTTPWebPage;
 import pie.ilikepiefoo2.borealis.tag.Tag;
 
@@ -95,6 +97,38 @@ public class ClassPage extends HTTPWebPage {
         }
         body.script(getTableSortScript());
     }
+    /*
+    public static Tag linkGenerics(Tag previous, Class<?> theClass)
+    {
+        if(theClass.getTypeParameters().length > 0) {
+            LogManager.getLogger().info("Generic for: {}",theClass.getName());
+            LogManager.getLogger().info("Generic Type Count: {}",theClass.getTypeParameters().length);
+            previous = previous.text("<");
+            for (int i=0; i< theClass.getTypeParameters().length; i++) {
+                TypeVariable<? extends Class<?>> typeParameter = theClass.getTypeParameters()[i];
+                LogManager.getLogger().info("Super Class: {}",typeParameter.getGenericDeclaration().getSuperclass());
+                LogManager.getLogger().info("Generic Definition: {}",typeParameter.toString());
+                LogManager.getLogger().info("Class Name: {}",typeParameter.getTypeName());
+                LogManager.getLogger().info("Bounds: {}",typeParameter.getBounds()[0].getTypeName());
+                LogManager.getLogger().info("Annotated Bounds: {}",typeParameter.getAnnotatedBounds()[0].getType().getTypeName());
+                previous = previous.text(typeParameter.getName());
+
+                if(typeParameter.getGenericDeclaration().getSuperclass() != null){
+                    previous = linkType(previous.text(typeParameter.getName()+" extends "),typeParameter.getGenericDeclaration().getSuperclass());
+                }else{
+                    previous = previous.text(typeParameter.getName());
+                }
+
+
+                if(i != theClass.getTypeParameters().length-1){
+                    previous = previous.text(",");
+                }
+            }
+            previous = previous.text(">");
+        }
+        return previous;
+    }
+    */
 
     public static Tag linkType(Tag previous, Class<?> aclass){
         if(!aclass.isPrimitive() && !aclass.isArray()){
@@ -134,7 +168,9 @@ public class ClassPage extends HTTPWebPage {
         if(toolTip.length() > 0)
             name.tooltip(toolTip);
 
-        linkType(row.td(),field.getType());
+        row.td().span(field.getGenericType().getTypeName());
+
+        //linkType(row.td(),field.getType());
     }
     public static void addMethod(Tag table, Method method)
     {
@@ -163,17 +199,18 @@ public class ClassPage extends HTTPWebPage {
 
         methodTag.text(")");
 
-        linkType(row.td(),method.getReturnType());
+        row.td().span(method.getGenericReturnType().getTypeName());
+        //linkType(row.td(),method.getReturnType());
     }
     public static void addConstructor(Tag table, Constructor constructor)
     {
         Tag methodTag;
         Tag row = table.tr();
         addDataAttributes(row,constructor);
-        String constructorName = cleanseLambdaName(constructor.getName());
+        String constructorName = cleanseLambdaName(constructor.getDeclaringClass().getSimpleName());
 
 
-        methodTag = row.td().span(constructorName);
+        methodTag = row.td().span(Modifier.toString(constructor.getModifiers())+" "+constructorName);
 
         String tooltip = compileAnnotationToolTip(constructor.getAnnotations());
         if(tooltip.length() > 0)
@@ -201,19 +238,19 @@ public class ClassPage extends HTTPWebPage {
         }
     }
     public static void addDataAttributes(Tag row, Constructor constructor){
-        row.attr("data-name",constructor.getName());
+        row.attr("data-name",cleanseLambdaName(constructor.getName()));
         row.attr("data-parameters-count",constructor.getParameterCount()+"");
         addDataAttributes(row,constructor.getModifiers());
     }
     public static void addDataAttributes(Tag row, Method method){
-        row.attr("data-name",method.getName());
+        row.attr("data-name",cleanseLambdaName(method.getName()));
         row.attr("data-return-type-generic",method.getGenericReturnType().getTypeName());
         row.attr("data-parameters-count",method.getParameterCount()+"");
         addDataAttribute(row,"data-return-type", method.getReturnType());
         addDataAttributes(row,method.getModifiers());
     }
     public static void addDataAttributes(Tag row, Field field){
-        row.attr("data-name",field.getName());
+        row.attr("data-name",cleanseLambdaName(field.getName()));
         row.attr("data-return-type-generic",field.getGenericType().getTypeName());
         addDataAttribute(row,"data-return-type", field.getType());
         addDataAttributes(row,field.getModifiers());
