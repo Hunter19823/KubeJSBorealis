@@ -1,11 +1,14 @@
 package pie.ilikepiefoo2.kubejsborealis.builder;
 
-import pie.ilikepiefoo2.borealis.BorealisHomePageEvent;
+
 import pie.ilikepiefoo2.borealis.page.HomePageEntry;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @author ILIKEPIEFOO2
+ */
 public class BorealisHomePageEntryBuilder {
     public HomePageEntry homePageEntry;
     public List<BorealisHomePageEntryBuilder> entries;

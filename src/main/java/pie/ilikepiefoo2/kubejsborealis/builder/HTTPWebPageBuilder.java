@@ -1,11 +1,13 @@
 package pie.ilikepiefoo2.kubejsborealis.builder;
 
 import pie.ilikepiefoo2.borealis.page.HTTPWebPage;
-import pie.ilikepiefoo2.borealis.page.WebPage;
 import pie.ilikepiefoo2.borealis.tag.Tag;
 
 import java.util.function.Consumer;
 
+/**
+ * @author ILIKEPIEFOO2
+ */
 public class HTTPWebPageBuilder implements WebPageBuilder<HTTPWebPage> {
     public Consumer<Tag> header;
     public Consumer<Tag> body;

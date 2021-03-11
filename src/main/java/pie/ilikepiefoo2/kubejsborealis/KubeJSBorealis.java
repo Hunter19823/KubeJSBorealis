@@ -2,9 +2,9 @@ package pie.ilikepiefoo2.kubejsborealis;
 
 import dev.latvian.kubejs.event.EventJS;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.server.FMLServerAboutToStartEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.apache.logging.log4j.LogManager;
@@ -15,37 +15,47 @@ import org.reflections.scanners.SubTypesScanner;
 import pie.ilikepiefoo2.kubejsborealis.pages.KubeJSHomePage;
 import pie.ilikepiefoo2.kubejsborealis.util.ReflectionHandler;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * @author ILIKEPIEFOO2
+ */
 @Mod("kubejsborealis")
 public class KubeJSBorealis {
     private static final Logger LOGGER = LogManager.getLogger(KubeJSBorealis.class);
     public static final String MOD_NAME = "KubeJSBorealis";
     public static final String MOD_ID = "kubejsborealis";
-    private static ReflectionHandler reflectionHandler;
-    private static List<Class> eventJSes;
+    public static List<Class> eventJSes = new ArrayList<>();
 
     public KubeJSBorealis()
     {
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON,ConfigHandler.COMMON_SPEC);
         MinecraftForge.EVENT_BUS.addListener(KubeJSEventHandler::homePageEvent);
         MinecraftForge.EVENT_BUS.addListener(KubeJSEventHandler::onPageEvent);
         MinecraftForge.EVENT_BUS.addListener(KubeJSEventHandler::onServerStart);
         MinecraftForge.EVENT_BUS.addListener(KubeJSEventHandler::bindingsEvent);
         MinecraftForge.EVENT_BUS.addListener(this::fmlServerStarting);
-        LOGGER.info("Setting up Reflection Handler... (This may take a while)");
-        reflectionHandler = new ReflectionHandler();
-        LOGGER.info("Finished setting up Reflection Handler.");
+        FMLJavaModLoadingContext.get().getModEventBus().addListener((ModConfig.Loading e) -> ConfigHandler.onConfigLoad());
+        FMLJavaModLoadingContext.get().getModEventBus().addListener((ModConfig.Reloading e) -> ConfigHandler.onConfigLoad());
     }
 
 
     private void fmlServerStarting(FMLServerAboutToStartEvent event)
     {
-        LOGGER.info("Configuring ReflectionHandler to current thread...");
-        reflectionHandler.configureToCurrentThread();
-        LOGGER.info("Reflection Handler configured. Now collecting all EventJSes");
-        eventJSes = reflectionHandler.applyFilter(possibleClass -> EventJS.class.isAssignableFrom(possibleClass));
-        LOGGER.info("Events Found >> {} ",eventJSes.size());
+        if(ConfigHandler.COMMON.reflectionHandler.get()) {
+            try {
+                LOGGER.info("Configuring ReflectionHandler to current thread...");
+                ReflectionHandler.getInstance().configureToCurrentThread();
+                LOGGER.info("Reflection Handler configured. Now collecting all EventJS classes");
+                eventJSes = ReflectionHandler.getInstance().applyFilter(possibleClass -> EventJS.class.isAssignableFrom(possibleClass));
+                LOGGER.info("Events Found >> {} ", eventJSes.size());
+            } catch (Throwable e) {
+                // If there is an error configuring to current thread...
+                LOGGER.error("KJS Borealis could not load reflectionHandler: {}", e);
+            }
+        }
     }
 
     public static List<Class> getAllJSEvents()
@@ -53,14 +63,9 @@ public class KubeJSBorealis {
         return eventJSes;
     }
 
-    public static ReflectionHandler getReflectionHandler()
-    {
-        return reflectionHandler;
-    }
-
     /*
      * This method is used to generate a list of all the EventJS class locations using reflection.
-     *
+     * This is purely for testing.
      */
     public static void main(String[] args)
     {

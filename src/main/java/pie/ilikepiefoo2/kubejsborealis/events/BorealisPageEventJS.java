@@ -6,6 +6,9 @@ import pie.ilikepiefoo2.borealis.BorealisServer;
 import pie.ilikepiefoo2.borealis.page.WebPage;
 import pie.ilikepiefoo2.kubejsborealis.builder.WebPageBuilder;
 
+/**
+ * @author ILIKEPIEFOO2
+ */
 public class BorealisPageEventJS extends EventJS {
     private final BorealisPageEvent event;
 

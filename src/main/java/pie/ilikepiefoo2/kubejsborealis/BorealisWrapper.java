@@ -4,6 +4,9 @@ import pie.ilikepiefoo2.kubejsborealis.builder.BorealisHomePageEntryBuilder;
 import pie.ilikepiefoo2.kubejsborealis.builder.HTTPWebPageBuilder;
 import pie.ilikepiefoo2.kubejsborealis.builder.JSONWebPageBuilder;
 
+/**
+ * @author ILIKEPIEFOO2
+ */
 public class BorealisWrapper {
     public BorealisHomePageEntryBuilder newHomePageEntry(String title, String url)
     {

@@ -1,21 +1,27 @@
 package pie.ilikepiefoo2.kubejsborealis.pages;
 
-import com.google.common.reflect.TypeParameter;
-import org.apache.logging.log4j.LogManager;
 import pie.ilikepiefoo2.borealis.page.HTTPWebPage;
+import pie.ilikepiefoo2.borealis.page.PageType;
 import pie.ilikepiefoo2.borealis.tag.Tag;
+import pie.ilikepiefoo2.kubejsborealis.ConfigHandler;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
 import static pie.ilikepiefoo2.kubejsborealis.pages.KubeJSHomePage.*;
 
+/**
+ * @author ILIKEPIEFOO2
+ */
 public class ClassPage extends HTTPWebPage {
     private final Class subject;
+    private static boolean includeInheritedClasses = ConfigHandler.COMMON.includeInheritedClasses.get();
+    private static boolean includeInheritedConstructors = ConfigHandler.COMMON.includeInheritedConstructors.get();
+    private static boolean includeInheritedFields = ConfigHandler.COMMON.includeInheritedFields.get();
+    private static boolean includeInheritedMethods = ConfigHandler.COMMON.includeInheritedMethods.get();
 
     public ClassPage(Class subject)
     {
@@ -24,73 +30,135 @@ public class ClassPage extends HTTPWebPage {
     }
 
     @Override
+    public PageType getPageType()
+    {
+        return ConfigHandler.COMMON.kubejsClassPage.get();
+    }
+
+    @Override
     public void body(Tag body)
     {
+        Tag tempTag;
+        Tag rowTag;
+        Class<?>[] innerClasses;
+        List<Constructor<?>> constructors;
+        List<Field> fields;
+        List<Method> methods;
+        includeInheritedClasses = ConfigHandler.COMMON.includeInheritedClasses.get();
+        includeInheritedConstructors = ConfigHandler.COMMON.includeInheritedConstructors.get();
+        includeInheritedFields = ConfigHandler.COMMON.includeInheritedFields.get();
+        includeInheritedMethods = ConfigHandler.COMMON.includeInheritedMethods.get();
+
+        // Logo and link to documentation homepage.
         body.img("https://kubejs.latvian.dev/logo_title.png").style("height", "7em");
         body.br();
         body.h1("").a("KubeJS Documentation", homeURL);
         body.br();
-        Tag classTag = body.h3("");
-        classTag.span(Modifier.toString(this.subject.getModifiers())+" "+this.subject.getPackage().getName()+".");
-        linkType(classTag,this.subject);
+
+        // Class modifiers and package name
+        tempTag = body.h3("");
+        tempTag.span(Modifier.toString(this.subject.getModifiers())+" "+this.subject.getPackage().getName()+".");
+        // Class name
+        linkType(tempTag,this.subject);
+        // Super class
         if(this.subject.getSuperclass() != null)
         {
-            classTag.text(" extends ");
-            linkType(classTag,this.subject.getSuperclass());
-            if(this.subject.getInterfaces().length > 0) {
-                classTag.text(" implements ");
-                for(int i=0; i<this.subject.getInterfaces().length; i++){
-                    linkType(classTag, this.subject.getInterfaces()[i]);
-                    if(i != this.subject.getInterfaces().length -1)
-                        classTag.span(", ");
-                }
+            tempTag.text(" extends ");
+            // Link to super class
+            linkType(tempTag,this.subject.getSuperclass());
+        }
+        // Interfaces
+        if(this.subject.getInterfaces().length > 0) {
+            tempTag.text(" implements ");
+            // Link each implemented interface
+            for(int i=0; i<this.subject.getInterfaces().length; i++){
+                linkType(tempTag, this.subject.getInterfaces()[i]);
+                if(i != this.subject.getInterfaces().length -1)
+                    tempTag.span(", ");
             }
         }
+        // Link Enclosing Class
         if(this.subject.getEnclosingClass() != null) {
             linkType(body.h3("Enclosing Class: "),this.subject.getEnclosingClass());
         }
+        // Declaring Class
         if(this.subject.getDeclaringClass() != null){
             linkType(body.h3("Declaring Class: "),this.subject.getDeclaringClass());
         }
-        Tag firstRow;
         body.br();
-        if(this.subject.getDeclaredConstructors().length > 0) {
-            Tag constructorTable = body.table();
-            firstRow = constructorTable.tr();
-            firstRow.th().a("Constructors", "#constructors");
 
-            List<Constructor> constructors = Arrays.asList(this.subject.getDeclaredConstructors());
-            Collections.sort(constructors, Comparator.comparing(Constructor::getName));
+        // Subclasses
+        if(includeInheritedClasses){
+            innerClasses = this.subject.getClasses();
+        }else{
+            innerClasses = this.subject.getDeclaredClasses();
+        }
+        if(innerClasses.length > 0){
+            addClassTable(body.table(),"Subclass",Arrays.asList(innerClasses));
+            body.br();
+        }
+
+        // Constructors
+        if(includeInheritedConstructors){
+            constructors = Arrays.asList(this.subject.getConstructors());
+        }else{
+            constructors = Arrays.asList(this.subject.getDeclaredConstructors());
+        }
+        if(constructors.size() > 0) {
+            tempTag = body.table();
+            rowTag = tempTag.tr();
+            rowTag.th().a("Constructors", "#constructors");
+            if(includeInheritedConstructors)
+                rowTag.th().text("Declaring Class");
+            constructors.sort(Comparator.comparing(Constructor::getName));
+            constructors.sort((subjectA, subjectB) -> this.compareDeclaringClass(subjectA,subjectB));
             for (Constructor constructor : constructors) {
-                addConstructor(constructorTable, constructor);
+                addConstructor(tempTag, constructor);
             }
 
             body.br();
         }
-        if(this.subject.getDeclaredFields().length > 0) {
-            Tag fieldTable = body.table();
-            firstRow = fieldTable.tr();
-            firstRow.th().a("Fields", "#fields");
-            firstRow.th().text("Type");
 
-
-            List<Field> fields = Arrays.asList(this.subject.getDeclaredFields());
-            Collections.sort(fields, Comparator.comparing(Field::getName));
+        // Fields
+        if(includeInheritedFields){
+            fields = Arrays.asList(this.subject.getFields());
+        }else{
+            fields = Arrays.asList(this.subject.getDeclaredFields());
+        }
+        if(fields.size() > 0) {
+            tempTag = body.table();
+            rowTag = tempTag.tr();
+            rowTag.th().a("Fields", "#fields");
+            rowTag.th().text("Type");
+            if(includeInheritedFields)
+                rowTag.th().text("Declaring Class");
+            fields.sort(Comparator.comparing(Field::getName));
+            fields.sort((subjectA, subjectB) -> this.compareDeclaringClass(subjectA,subjectB));
             for (Field field : fields) {
-                addField(fieldTable, field);
+                addField(tempTag, field);
             }
             body.br();
         }
-        if(this.subject.getDeclaredMethods().length > 0) {
-            Tag methodTable = body.table();
-            firstRow = methodTable.tr();
-            firstRow.th().a("Methods", "#methods");
-            firstRow.th().text("Return-Type");
 
-            List<Method> methods = Arrays.asList(this.subject.getDeclaredMethods());
-            Collections.sort(methods, Comparator.comparing(Method::getName));
+        // Methods
+        if(includeInheritedMethods){
+            methods = Arrays.asList(this.subject.getMethods());
+        }else{
+            methods = Arrays.asList(this.subject.getDeclaredMethods());
+        }
+        if(methods.size() > 0) {
+            tempTag = body.table();
+            rowTag = tempTag.tr();
+            rowTag.th().a("Methods", "#methods");
+            rowTag.th().text("Return-Type");
+            if(includeInheritedMethods)
+                rowTag.th().text("Declaring Class");
+
+
+            methods.sort(Comparator.comparing(Method::getName));
+            methods.sort((subjectA, subjectB) -> this.compareDeclaringClass(subjectA,subjectB));
             for (Method method : methods) {
-                addMethod(methodTable, method);
+                addMethod(tempTag, method);
             }
 
             body.br();
@@ -130,30 +198,84 @@ public class ClassPage extends HTTPWebPage {
     }
     */
 
-    public static Tag linkType(Tag previous, Class<?> aclass){
-        if(!aclass.isPrimitive() && !aclass.isArray()){
-            return previous.a(aclass.getSimpleName(),homeURL+aclass.getName());
-        }else{
-            if(aclass.isArray()){
-                linkType(previous,aclass.getComponentType());
-                return previous.text("[]");
-            }else {
-                return previous.text(aclass.getSimpleName());
-            }
-        }
+    public int compareDeclaringClass(Member subjectA, Member subjectB)
+    {
+        if (subjectA.getDeclaringClass().equals(subjectB))
+            return 0;
+        if (subjectA.getDeclaringClass().equals(this.subject))
+            return -1;
+        if (subjectB.getDeclaringClass().equals(this.subject))
+            return 1;
+        return 0;
     }
-    public static void linkParameters(Tag previous, Parameter[] parameters){
+
+    public static Tag linkType(Tag previous, Class<?> subject)
+    {
+        return linkType(previous,subject,getNameOfClass(subject));
+    }
+    public static Tag linkType(Tag previous, Class<?> subject, String name)
+    {
+        Tag result = previous;
+        Class<?> referenceClass = subject;
+        if(subject.isArray()) {
+            referenceClass = subject.getComponentType();
+        }
+        if(!referenceClass.isPrimitive()){
+            result = result.a(name,getLinkToClass(referenceClass));
+        }else{
+            result = result.span(name);
+        }
+
+        return result;
+    }
+    public static String getLinkToClass(Class<?> subject)
+    {
+        if(subject.isArray())
+            return getLinkToClass(subject.getComponentType());
+        if(!subject.isPrimitive())
+            return homeURL+subject.getName();
+        return "";
+    }
+    public static String getNameOfClass(Class<?> subject)
+    {
+        if(subject.isArray())
+            return getNameOfClass(subject.getComponentType())+"[]";
+        return subject.getSimpleName();
+    }
+    public static void linkParameters(Tag previous, Parameter[] parameters, Type[] genericTypes)
+    {
+        Tag combine;
         for(int i=0; i<parameters.length; i++){
             Parameter parameter = parameters[i];
-            previous.text(" ");
-            linkType(previous,parameter.getType());
-            previous.text(" ");
-            previous.text(parameter.getName());
+            combine = previous.span(" ");
+            linkType(combine,parameter.getType()).tooltip().style("display","inline").text(genericTypes[i].getTypeName());
+            combine.text(" ");
+            combine.text(parameter.getName());
             if(i != parameters.length-1)
                 previous.text(",");
         }
     }
+    public static void addConstructor(Tag table, Constructor constructor)
+    {
+        Tag methodTag;
+        Tag row = table.tr();
+        addDataAttributes(row,constructor);
+        String constructorName = cleanseLambdaName(constructor.getDeclaringClass().getSimpleName());
 
+        row = row.td();
+        methodTag = row.span(Modifier.toString(constructor.getModifiers())+" "+constructorName);
+
+        String tooltip = compileAnnotationToolTip(constructor.getAnnotations());
+        if(tooltip.length() > 0)
+            methodTag.tooltip().style("display","inline").text(tooltip);
+
+        row.text("(");
+        linkParameters(row,constructor.getParameters(),constructor.getGenericParameterTypes());
+        row.text(")");
+
+        if(includeInheritedConstructors)
+            row.td().a(constructor.getDeclaringClass().getName(),getLinkToClass(constructor.getDeclaringClass()));
+    }
     public static void addField(Tag table, Field field)
     {
         Tag row = table.tr();
@@ -166,9 +288,13 @@ public class ClassPage extends HTTPWebPage {
         linkType(name,field.getType());
         name.span(" " + field.getName());
         if(toolTip.length() > 0)
-            name.tooltip(toolTip);
+            name.tooltip().style("display","inline").text(toolTip);
 
-        row.td().span(field.getGenericType().getTypeName());
+
+        linkType(row.td(),field.getType(),field.getGenericType().getTypeName());
+
+        if(includeInheritedFields)
+            row.td().a(field.getDeclaringClass().getName(),getLinkToClass(field.getDeclaringClass()));
 
         //linkType(row.td(),field.getType());
     }
@@ -176,49 +302,39 @@ public class ClassPage extends HTTPWebPage {
     {
         Tag row = table.tr();
         addDataAttributes(row,method);
+        Tag column = row.td();
 
-        Tag methodTag = row.td();
-        methodTag.text(Modifier.toString(method.getModifiers())+" ");
+        // Access Modifiers
+        column.span(Modifier.toString(method.getModifiers())+" ");
 
+        // Return Type
         if(!method.getReturnType().getTypeName().equals(" void ")){
-            linkType(methodTag,method.getReturnType()).text(" ");
+            linkType(column,method.getReturnType()).tooltip().style("display","inline").text(method.getGenericReturnType().getTypeName());
+            column.text(" ");
         }else{
-            methodTag.text("void");
+            column = column.span("void");
         }
+
+        // Method name
         String methodName = cleanseLambdaName(method.getName());
-
-
         String toolTip = compileAnnotationToolTip(method.getAnnotations());
         if(toolTip.length() > 0) {
-            methodTag.span(methodName).tooltip(toolTip);
+            column.span(methodName).tooltip().style("display","inline").text(toolTip);
         }else{
-            methodTag.span(methodName);
+            column.text(methodName);
         }
-        methodTag = methodTag.text("(");
-        linkParameters(methodTag,method.getParameters());
+        // Parameters
+        column.text("(");
+        linkParameters(column,method.getParameters(),method.getGenericParameterTypes());
+        column.text(")");
 
-        methodTag.text(")");
+        // Return Type Column
+        linkType(row.td(),method.getReturnType(),method.getGenericReturnType().getTypeName());
 
-        row.td().span(method.getGenericReturnType().getTypeName());
-        //linkType(row.td(),method.getReturnType());
-    }
-    public static void addConstructor(Tag table, Constructor constructor)
-    {
-        Tag methodTag;
-        Tag row = table.tr();
-        addDataAttributes(row,constructor);
-        String constructorName = cleanseLambdaName(constructor.getDeclaringClass().getSimpleName());
+        // Inherited Methods
+        if(includeInheritedMethods)
+            row.td().a(method.getDeclaringClass().getName(),getLinkToClass(method.getDeclaringClass()));
 
-
-        methodTag = row.td().span(Modifier.toString(constructor.getModifiers())+" "+constructorName);
-
-        String tooltip = compileAnnotationToolTip(constructor.getAnnotations());
-        if(tooltip.length() > 0)
-            methodTag.tooltip(tooltip);
-
-        methodTag.text("(");
-        linkParameters(methodTag,constructor.getParameters());
-        methodTag.text(")");
     }
     public static String compileAnnotationToolTip(Annotation[] annotations)
     {
@@ -238,11 +354,13 @@ public class ClassPage extends HTTPWebPage {
         }
     }
     public static void addDataAttributes(Tag row, Constructor constructor){
+        row.attr("data-declaring-class",constructor.getDeclaringClass().getTypeName());
         row.attr("data-name",cleanseLambdaName(constructor.getName()));
         row.attr("data-parameters-count",constructor.getParameterCount()+"");
         addDataAttributes(row,constructor.getModifiers());
     }
     public static void addDataAttributes(Tag row, Method method){
+        row.attr("data-declaring-class",method.getDeclaringClass().getTypeName());
         row.attr("data-name",cleanseLambdaName(method.getName()));
         row.attr("data-return-type-generic",method.getGenericReturnType().getTypeName());
         row.attr("data-parameters-count",method.getParameterCount()+"");
@@ -250,12 +368,13 @@ public class ClassPage extends HTTPWebPage {
         addDataAttributes(row,method.getModifiers());
     }
     public static void addDataAttributes(Tag row, Field field){
+        row.attr("data-declaring-class",field.getDeclaringClass().getTypeName());
         row.attr("data-name",cleanseLambdaName(field.getName()));
         row.attr("data-return-type-generic",field.getGenericType().getTypeName());
         addDataAttribute(row,"data-return-type", field.getType());
         addDataAttributes(row,field.getModifiers());
     }
-    public static void addDataAttribute(Tag row, String key, Class type)
+    public static void addDataAttribute(Tag row, String key, Class<?> type)
     {
         if(!type.getTypeName().equals(Void.TYPE.getTypeName())){
             if (type.isArray()) {

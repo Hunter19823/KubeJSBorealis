@@ -7,6 +7,9 @@ import pie.ilikepiefoo2.borealis.page.WebPage;
 
 import java.util.function.Supplier;
 
+/**
+ * @author ILIKEPIEFOO2
+ */
 public class CustomWebPageBuilder implements WebPageBuilder<WebPage> {
     public Supplier<String> getContentType;
     public Supplier<String> getContent;

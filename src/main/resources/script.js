@@ -113,8 +113,9 @@ for(let i=0; i<tables.length; i++){
         });
         sortText.appendChild(select);
         table.prepend(sortText);
-
+        /*
         let sortData = select.value.split(':');
         sortColumn(i,sortData[0],sortData[1]);
+         */
     }
 }

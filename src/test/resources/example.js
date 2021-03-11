@@ -26,16 +26,16 @@ onEvent('borealis.page', event => {
     }else if(event.checkPath('custom')){ // Check the request's path to see if the user is requesting custom
         // Create a new HTML Page.
         let customPage = HTMLPage()
-            /*
-            .head( (head) => {
+
+            //.head( (head) => {
                 // Style Documentation:
                 // http://localhost:48574/kubejs_auto_docs/pie.ilikepiefoo2.borealis.tag.Style
                 // Example:
-                let style = head.style().add("h1")
-                style.set("color","red")
+                //let style = head.style().add("h1")
+                //style.set("color","red")
 
-            }
-            */
+            //}
+
             .body( (body) => {
                 // Tag Documentation:
                 // http://localhost:48574/kubejs_auto_docs/pie.ilikepiefoo2.borealis.tag.Tag

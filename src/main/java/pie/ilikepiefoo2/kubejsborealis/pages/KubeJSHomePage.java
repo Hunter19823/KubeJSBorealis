@@ -3,7 +3,6 @@ package pie.ilikepiefoo2.kubejsborealis.pages;
 import dev.latvian.kubejs.script.ScriptManager;
 import dev.latvian.kubejs.script.ScriptPack;
 import dev.latvian.kubejs.script.ScriptType;
-import dev.latvian.kubejs.script.TypedDynamicFunction;
 import dev.latvian.mods.rhino.NativeJavaArray;
 import dev.latvian.mods.rhino.NativeJavaMap;
 import dev.latvian.mods.rhino.NativeJavaObject;
@@ -11,28 +10,37 @@ import dev.latvian.mods.rhino.util.DynamicFunction;
 import org.apache.logging.log4j.Logger;
 import pie.ilikepiefoo2.borealis.Borealis;
 import pie.ilikepiefoo2.borealis.page.HTTPWebPage;
+import pie.ilikepiefoo2.borealis.page.PageType;
 import pie.ilikepiefoo2.borealis.tag.Tag;
+import pie.ilikepiefoo2.kubejsborealis.ConfigHandler;
 import pie.ilikepiefoo2.kubejsborealis.KubeJSBorealis;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.List;
 
 import static pie.ilikepiefoo2.kubejsborealis.pages.ClassPage.compileAnnotationToolTip;
 import static pie.ilikepiefoo2.kubejsborealis.pages.ClassPage.linkType;
 
+/**
+ * @author ILIKEPIEFOO2
+ */
 public class KubeJSHomePage extends HTTPWebPage {
     private static final Logger LOGGER = Borealis.LOGGER;
     public static final String homeURI = "kubejs_auto_docs";
     public static final String homeURL = "/"+homeURI+"/";
-    public static final Map<String,Class> knownEventJSClasses = new TreeMap<>();
+
+    @Override
+    public PageType getPageType()
+    {
+        return ConfigHandler.COMMON.kubejsDocumentation.get();
+    }
 
     @Override
     public void body(Tag body)
@@ -41,36 +49,10 @@ public class KubeJSHomePage extends HTTPWebPage {
         body.img("https://kubejs.latvian.dev/logo_title.png").style("height", "7em");
         body.br();
         body.h1("").a("KubeJS Documentation", homeURL);
-        /*
-        body.text("This section is a WIP. Try starting ")
-                .a("here","/kubejs_auto_docs/dev.latvian.kubejs.event.EventsJS")
-                .text(". Due to technical issues I will need to manually add events to this page.");
-         */
-
-        body.br();
-        body.h1("").a("KubeJS Documented Events","#events");
-        body.br();
 
         if(KubeJSBorealis.getAllJSEvents().size() > 0) {
-            Tag table = body.table();
-            Tag header = table.tr();
-            header.th().text("KJS Name");
-            header.th().text("EventJS");
-            KubeJSBorealis.getAllJSEvents().forEach(
-                    eventClass ->
-                    {
-                        Tag previous = table.tr();
-                        previous.attr("data-name",ClassPage.cleanseLambdaName(eventClass.getSimpleName()));
-                        previous.attr("data-package-name",eventClass.getPackage().getName());
-                        String toolTip = compileAnnotationToolTip(eventClass.getAnnotations());
-                        if(toolTip.length() > 0) {
-                            linkType(previous.td(), eventClass).tooltip(toolTip);
-                        }else{
-                            linkType(previous.td(), eventClass);
-                        }
-                        previous.td().span(eventClass.getName());
-                    }
-            );
+            body.br();
+            addClassTable(body.table(),"Scanned EventJS Class",KubeJSBorealis.getAllJSEvents());
         }
         if(global.size() > 0) {
             body.br();
@@ -90,22 +72,6 @@ public class KubeJSHomePage extends HTTPWebPage {
         }
 
         body.script(getTableSortScript());
-        /*
-        Tag defaultBindings = body.table();
-        Tag header = defaultBindings.tr();
-        header.th().a("Event","#events");
-        header.th().text("Class");
-        LOGGER.debug("Default Bindings currently has: "+DefaultBindings.GLOBAL.size()+" bindings.");
-        getAllProperties(KubeJS.clientScriptManager);
-        DefaultBindings.GLOBAL.keySet().iterator().forEachRemaining(
-                key -> {
-                    LOGGER.debug("Found binding \""+key+"\" adding to homepage.");
-                    Tag row = defaultBindings.tr();
-                    row.td().text(key);
-                    linkClass(row.td(),DefaultBindings.GLOBAL.get(key).getClass());
-                }
-        );
-         */
 
 
 
@@ -122,10 +88,10 @@ public class KubeJSHomePage extends HTTPWebPage {
         return instance;
     }
 
-    private static Map<String,Class> startup;
-    private static Map<String,Class> client;
-    private static Map<String,Class> server;
-    private static Map<String,Class> global;
+    private static Map<String,Class> startup = new HashMap<>();
+    private static Map<String,Class> client = new HashMap<>();
+    private static Map<String,Class> server = new HashMap<>();
+    private static Map<String,Class> global = new HashMap<>();
     public static void loadBindings()
     {
         client = getAllProperties(ScriptType.CLIENT.manager.get());
@@ -149,6 +115,33 @@ public class KubeJSHomePage extends HTTPWebPage {
             second.remove(key);
             third.remove(key);
         }
+    }
+
+    public static void addClassTable(Tag table, String title, List<Class> classList)
+    {
+        Tag header = table.tr();
+        header.th().a(title,"#"+title.replaceAll(" ","_"));
+        header.th().text("Class Name");
+        classList.forEach(
+            subject ->
+            {
+                Tag previous = table.tr();
+                if(subject.getDeclaringClass() != null) {
+                    previous.attr("data-declaring-class", subject.getDeclaringClass().getTypeName());
+                } else{
+                    previous.attr("data-declaring-class", "Unknown");
+                }
+                previous.attr("data-name",ClassPage.cleanseLambdaName(subject.getSimpleName()));
+                previous.attr("data-package-name",subject.getPackage().getName());
+                String toolTip = compileAnnotationToolTip(subject.getAnnotations());
+                if(toolTip.length() > 0) {
+                    linkType(previous.td(), subject).tooltip(toolTip.replace("\n","<br>").replace("\r","<br>"));
+                }else{
+                    linkType(previous.td(), subject);
+                }
+                previous.td().span(subject.getName());
+            }
+    );
     }
 
     public static void addTable(Tag previous,String title,Map<String, Class> classMap)
@@ -364,9 +357,10 @@ public class KubeJSHomePage extends HTTPWebPage {
             "        });\n" +
             "        sortText.appendChild(select);\n" +
             "        table.prepend(sortText);\n" +
-            "\n" +
+            "        /*\n" +
             "        let sortData = select.value.split(':');\n" +
             "        sortColumn(i,sortData[0],sortData[1]);\n" +
+            "         */\n" +
             "    }\n" +
             "}\n";
 }

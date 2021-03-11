@@ -6,7 +6,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,15 +22,19 @@ import pie.ilikepiefoo2.kubejsborealis.events.BorealisHomePageEventJS;
 import pie.ilikepiefoo2.kubejsborealis.events.BorealisPageEventJS;
 import pie.ilikepiefoo2.kubejsborealis.pages.ClassPage;
 import pie.ilikepiefoo2.kubejsborealis.pages.KubeJSHomePage;
-import pie.ilikepiefoo2.kubejsborealis.util.ReflectionHandler;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 
+import static pie.ilikepiefoo2.kubejsborealis.KubeJSEvents.CUSTOM_PAGE_EVENT;
+import static pie.ilikepiefoo2.kubejsborealis.KubeJSEvents.HOMEPAGE_EVENT;
 import static pie.ilikepiefoo2.kubejsborealis.pages.KubeJSHomePage.homeURI;
 
+/**
+ * @author ILIKEPIEFOO2
+ */
 @Mod.EventBusSubscriber(Dist.DEDICATED_SERVER)
 public class KubeJSEventHandler {
     private static final Logger LOGGER = LogManager.getLogger();
@@ -40,8 +43,12 @@ public class KubeJSEventHandler {
     @SubscribeEvent
     public static void homePageEvent(BorealisHomePageEvent event)
     {
-        event.add(new HomePageEntry("KubeJS Documentaion",homeURI,"https://kubejs.latvian.dev/logo_title.png"));
-        new BorealisHomePageEventJS(event).post(ScriptType.SERVER,"borealis.homepage");
+        if(!ConfigHandler.COMMON.kubejsDocumentation.get().equals(PageType.DISABLED)) {
+            event.add(new HomePageEntry("KubeJS Documentaion", homeURI, "https://kubejs.latvian.dev/logo_title.png"));
+            if(ConfigHandler.COMMON.customPages.get()) {
+                new BorealisHomePageEventJS(event).post(ScriptType.SERVER, HOMEPAGE_EVENT);
+            }
+        }
     }
 
     @SubscribeEvent
@@ -76,7 +83,9 @@ public class KubeJSEventHandler {
                 }
             }
         }else{
-            new BorealisPageEventJS(event).post(ScriptType.SERVER,"borealis.page");
+            if(ConfigHandler.COMMON.customPages.get()) {
+                new BorealisPageEventJS(event).post(ScriptType.SERVER, CUSTOM_PAGE_EVENT);
+            }
         }
     }
 
