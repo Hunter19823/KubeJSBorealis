@@ -1,5 +1,7 @@
 package pie.ilikepiefoo2.kubejsborealis.pages;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import pie.ilikepiefoo2.borealis.page.HTTPWebPage;
 import pie.ilikepiefoo2.borealis.page.PageType;
 import pie.ilikepiefoo2.borealis.tag.Tag;
@@ -17,6 +19,7 @@ import static pie.ilikepiefoo2.kubejsborealis.pages.KubeJSHomePage.*;
  * @author ILIKEPIEFOO2
  */
 public class ClassPage extends HTTPWebPage {
+    private static final Logger LOGGER = LogManager.getLogger();
     private final Class subject;
     private static boolean includeInheritedClasses = ConfigHandler.COMMON.includeInheritedClasses.get();
     private static boolean includeInheritedConstructors = ConfigHandler.COMMON.includeInheritedConstructors.get();
@@ -325,7 +328,12 @@ public class ClassPage extends HTTPWebPage {
         }
         // Parameters
         column.text("(");
-        linkParameters(column,method.getParameters(),method.getGenericParameterTypes());
+        try {
+            linkParameters(column, method.getParameters(), method.getGenericParameterTypes());
+        } catch(TypeNotPresentException e){
+            LOGGER.error(e);
+            linkParameters(column, method.getParameters(), method.getTypeParameters());
+        }
         column.text(")");
 
         // Return Type Column

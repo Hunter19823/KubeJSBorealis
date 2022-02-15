@@ -26,13 +26,13 @@ Allowing for custom webpages to be created via kubeJS script.
 [[dependencies.kubejsborealis]]
            modId="borealis"
            mandatory = true
-           versionRange = "[1.1.5,)"
+           versionRange = "[1.2,)"
            ordering = "AFTER"
            side="BOTH"
 
 [[dependencies.kubejsborealis]]
             modId="kubejs"
             mandatory = false
-            versionRange = "[1603,)"
+            versionRange = "[1605,)"
             ordering = "AFTER"
             side="BOTH"
