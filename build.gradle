@@ -162,7 +162,7 @@ if (ENV.CURSEFORGE_KEY) {
             addGameVersion "1.16.4"
             addGameVersion "1.16.5"
             relations {
-                requiredDependency 'kubejs'
+                requiredDependency 'kubejs-forge'
                 requiredDependency 'borealis'
             }
             changelog = getGitChangelog

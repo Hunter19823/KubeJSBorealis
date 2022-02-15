@@ -19,10 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import static pie.ilikepiefoo2.kubejsborealis.KubeJSBorealis.MOD_ID;
+
 /**
  * @author ILIKEPIEFOO2
  */
-@Mod("kubejsborealis")
+@Mod(MOD_ID)
 public class KubeJSBorealis {
     private static final Logger LOGGER = LogManager.getLogger(KubeJSBorealis.class);
     public static final String MOD_NAME = "KubeJSBorealis";

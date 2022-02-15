@@ -27,6 +27,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static pie.ilikepiefoo2.kubejsborealis.KubeJSEvents.CUSTOM_PAGE_EVENT;
 import static pie.ilikepiefoo2.kubejsborealis.KubeJSEvents.HOMEPAGE_EVENT;
@@ -94,6 +95,9 @@ public class KubeJSEventHandler {
     @SubscribeEvent
     public static void onServerStart(FMLServerStartingEvent event)
     {
+        Consumer<FMLServerStartingEvent> consumer = (fmlServerStartingEvent) -> {
+            fmlServerStartingEvent.getServer().close();
+        };
         //KubeJSHomePage.loadBindings();
     }
 
