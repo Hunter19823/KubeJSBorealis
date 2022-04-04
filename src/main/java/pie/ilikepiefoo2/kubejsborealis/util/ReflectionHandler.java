@@ -1,7 +1,7 @@
 package pie.ilikepiefoo2.kubejsborealis.util;
 
 
-import dev.latvian.kubejs.event.EventJS;
+import dev.latvian.mods.kubejs.event.EventJS;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,7 +40,7 @@ public class ReflectionHandler {
 
     public static void main(String[] args)
     {
-        Class test = net.minecraft.block.DaylightDetectorBlock.class;
+        Class test = net.minecraft.client.Minecraft.class;
 
         ClassPage example = new ClassPage(test);
         ReflectionHandler reflectionHandler = new ReflectionHandler();

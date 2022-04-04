@@ -1,35 +1,31 @@
 buildscript {
     repositories {
-        maven { url = 'https://files.minecraftforge.net/maven' }
+        maven { url = 'https://maven.minecraftforge.net' }
         maven { url "https://plugins.gradle.org/m2/" }
-        jcenter()
         mavenCentral()
     }
     dependencies {
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
-        classpath 'com.wynprice.cursemaven:CurseMaven:1.2.+'
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
         classpath group: 'gradle.plugin.com.matthewprenger', name: 'CurseGradle', version: '1.4.+'
     }
 }
 
 // Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
 apply plugin: 'net.minecraftforge.gradle'
-apply plugin: 'eclipse'
+apply plugin: 'idea'
 apply plugin: 'maven-publish'
 apply plugin: 'com.matthewprenger.cursegradle'
-
-apply from: 'https://raw.githubusercontent.com/MinecraftModDevelopment/Gradle-Collection/master/generic/markdown-git-changelog.gradle'
 
 def ENV = System.getenv()
 version = ENV.BUILD_NUMBER ? "${mod_version}.${ENV.BUILD_NUMBER}" : "${mod_version}"
 group = project.mod_package
 archivesBaseName = project.mod_name
 
-sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
 minecraft {
-    mappings channel: 'snapshot', version: project.mapping_version
+    mappings channel: 'official', version: "${minecraft_version}"
     runs {
         client {
             workingDirectory project.file('run')
@@ -39,6 +35,10 @@ minecraft {
 
             // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
+
+
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
 
             mods {
                 KubeJSBorealis {
@@ -55,6 +55,39 @@ minecraft {
 
             // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+
+            mods {
+                KubeJSBorealis {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        // This run config launches GameTestServer and runs all registered gametests, then exits.
+        // By default, the server will crash when no gametests are provided.
+        // The gametest system is also enabled by default for other run configs under the /test command.
+        gameTestServer {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            // The markers can be added/remove as needed separated by commas.
+            // "SCAN": For mods scan.
+            // "REGISTRIES": For firing of registry events.
+            // "REGISTRYDUMP": For getting the contents of all registries.
+            property 'forge.logging.markers', 'REGISTRIES'
+
+            // Recommended logging level for the console
+            // You can set various levels here.
+            // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
+            property 'forge.logging.console.level', 'debug'
+
+            // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
+            property 'forge.enabledGameTestNamespaces', "${mod_id}"
+
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
 
             mods {
                 KubeJSBorealis {
@@ -73,10 +106,9 @@ minecraft {
             property 'forge.logging.console.level', 'debug'
 
             // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
-            args '--mod', project.mod_id, '--all',
-                    '--existing', file('src/main/resources/'),
-                    '--existing', file('src/generated/resources/'),
-                    '--output', file('src/generated/resources/')
+            args '--mod', "${mod_id}", '--all',
+                    '--output', file('src/generated/resources/'),
+                    '--existing', file('src/main/resources/')
 
             mods {
                 KubeJSBorealis {
@@ -91,33 +123,42 @@ minecraft {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
-    mavenLocal()
     maven {
-        url "https://www.cursemaven.com"
+        url "https://cursemaven.com"
         content {
             includeGroup "curse.maven"
         }
     }
-    maven { url "https://maven.latmod.com/" }
+    maven {
+        // Shedaniel's maven (Architectury API)
+        url = "https://maven.architectury.dev"
+    }
+
+    maven {
+        // saps.dev Maven (KubeJS and Rhino)
+        url = "https://maven.saps.dev/minecraft"
+        content {
+            includeGroup "dev.latvian.mods"
+        }
+    }
 }
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-    compile ("curse.maven:${borealis}:${borealis_version}")
-    compile ("curse.maven:${kubejs}:${kubejs_version}")
-    compile ("curse.maven:${rhino}:${rhino_version}")
 
-    compile "org.reflections:reflections:0.9.11"
-    //compileOnly ("https://edge.forgecdn.net/files/3214/956/Borealis-1.1.6.jar")
-    //compileOnly ("curse.maven:borealis-443070:3214956");
-    //compile (fg.deobf("curse.maven:${rhino}:${rhino_version}"))
-    /*
-    compileOnly ("curse.maven:${ftbquests}:${ftbquests_version}")
-    compileOnly (project.dependencies.create("com.feed_the_beast.mods:ftb-gui-library:${ftb_gui_library_version}") {
-        transitive = false
-        changing = true
-    })
-     */
-    //compile ("curse.maven:${item_filters}:${item_filters_version}")
+    // Borealis
+    implementation fg.deobf("curse.maven:${borealis}:${borealis_version}")
+
+    //modImplementation("dev.latvian.mods:kubejs-forge:${kubejs_version}")
+
+    // KubeJS
+    // ForgeGradle
+    implementation ("dev.latvian.mods:kubejs-forge:${kubejs_version}")
+
+    // these two are unfortunately needed since fg.deobf doesn't respect transitive dependencies as of yet
+    implementation ("dev.latvian.mods:rhino-forge:${rhino_version}")
+    implementation ("me.shedaniel:architectury-forge:${arch_version}")
+
+    // Reflections
 }
 
 // Example for how to get properties into the manifest for reading by the runtime..
@@ -157,16 +198,11 @@ if (ENV.CURSEFORGE_KEY) {
             id = project.curseforge_id_forge
             releaseType = "release"
             addGameVersion "Forge"
-            addGameVersion "1.16.2"
-            addGameVersion "1.16.3"
-            addGameVersion "1.16.4"
-            addGameVersion "1.16.5"
+            addGameVersion "${minecraft_version}"
             relations {
                 requiredDependency 'kubejs-forge'
                 requiredDependency 'borealis'
             }
-            changelog = getGitChangelog
-            changelogType = 'markdown'
         }
     }
 }else{

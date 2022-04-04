@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[35,)"
+loaderVersion="[40,)"
 issueTrackerURL = "https://github.com/Hunter19823/KubeJSBorealis/issues"
 license = "All Rights Reserved"
 
@@ -19,20 +19,20 @@ Allowing for custom webpages to be created via kubeJS script.
 [[dependencies.kubejsborealis]]
            modId="forge"
            mandatory = true
-           versionRange = "[35,)"
+           versionRange = "[40,)"
            ordering = "NONE"
            side="BOTH"
 
 [[dependencies.kubejsborealis]]
            modId="borealis"
            mandatory = true
-           versionRange = "[1.2,)"
+           versionRange = "[2,)"
            ordering = "AFTER"
            side="BOTH"
 
 [[dependencies.kubejsborealis]]
             modId="kubejs"
-            mandatory = false
-            versionRange = "[1605,)"
+            mandatory = true
+            versionRange = "[1802,)"
             ordering = "AFTER"
             side="BOTH"

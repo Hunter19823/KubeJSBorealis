@@ -2,8 +2,8 @@ package pie.ilikepiefoo2.kubejsborealis.builder;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import dev.latvian.kubejs.util.JsonUtilsJS;
-import dev.latvian.kubejs.util.MapJS;
+import dev.latvian.mods.kubejs.util.MapJS;
+import dev.latvian.mods.rhino.mod.util.JsonUtils;
 import pie.ilikepiefoo2.borealis.page.JsonWebPage;
 
 /**
@@ -14,7 +14,7 @@ public class JSONWebPageBuilder implements WebPageBuilder<JsonWebPage> {
 
     public JSONWebPageBuilder json(String element)
     {
-        this.element = JsonUtilsJS.fromString(element);
+        this.element = JsonUtils.fromString(element);
         return this;
     }public JSONWebPageBuilder json(JsonElement element)
     {

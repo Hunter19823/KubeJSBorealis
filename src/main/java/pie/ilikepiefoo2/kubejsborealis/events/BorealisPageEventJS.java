@@ -1,6 +1,6 @@
 package pie.ilikepiefoo2.kubejsborealis.events;
 
-import dev.latvian.kubejs.event.EventJS;
+import dev.latvian.mods.kubejs.event.EventJS;
 import pie.ilikepiefoo2.borealis.BorealisPageEvent;
 import pie.ilikepiefoo2.borealis.BorealisServer;
 import pie.ilikepiefoo2.borealis.page.WebPage;

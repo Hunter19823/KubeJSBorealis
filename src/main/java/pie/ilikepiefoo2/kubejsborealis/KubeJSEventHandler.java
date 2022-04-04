@@ -1,12 +1,12 @@
 package pie.ilikepiefoo2.kubejsborealis;
 
-import dev.latvian.kubejs.script.BindingsEvent;
-import dev.latvian.kubejs.script.ScriptType;
+import dev.latvian.mods.kubejs.script.BindingsEvent;
+import dev.latvian.mods.kubejs.script.ScriptType;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import pie.ilikepiefoo2.borealis.BorealisHomePageEvent;
@@ -93,16 +93,16 @@ public class KubeJSEventHandler {
 
 
     @SubscribeEvent
-    public static void onServerStart(FMLServerStartingEvent event)
+    public static void onServerStart( ServerStartingEvent event)
     {
-        Consumer<FMLServerStartingEvent> consumer = (fmlServerStartingEvent) -> {
+        Consumer<ServerStartingEvent> consumer = (fmlServerStartingEvent) -> {
             fmlServerStartingEvent.getServer().close();
         };
         //KubeJSHomePage.loadBindings();
     }
 
     @SubscribeEvent
-    public static void bindingsEvent(BindingsEvent event)
+    public static void bindingsEvent( BindingsEvent event)
     {
         if(event.type == ScriptType.SERVER)
         {
@@ -110,12 +110,12 @@ public class KubeJSEventHandler {
             event.add("Borealis",new BorealisWrapper());
             event.add("PageType",PageType.class);
             for(PageType type : PageType.values())
-                event.addConstant(type.name().toUpperCase(),type);
+                event.add(type.name().toUpperCase(),type);
             event.add("HttpResponseStatus", HttpResponseStatus.class);
             for(Field field : HttpResponseStatus.class.getDeclaredFields())
                 if(Modifier.isPublic(field.getModifiers()) && Modifier.isStatic(field.getModifiers()) && Modifier.isFinal(field.getModifiers())) {
                     try {
-                        event.addConstant(field.getName().toUpperCase(),field.get(null));
+                        event.add(field.getName().toUpperCase(),field.get(null));
                     } catch (IllegalAccessException e) {
                         LOGGER.error(e);
                     }

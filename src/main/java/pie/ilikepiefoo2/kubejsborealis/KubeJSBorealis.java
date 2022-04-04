@@ -1,23 +1,19 @@
 package pie.ilikepiefoo2.kubejsborealis;
 
-import dev.latvian.kubejs.event.EventJS;
+import dev.latvian.mods.kubejs.event.EventJS;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.server.ServerAboutToStartEvent;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.server.FMLServerAboutToStartEvent;
+import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.reflections.Reflections;
-import org.reflections.scanners.ResourcesScanner;
-import org.reflections.scanners.SubTypesScanner;
-import pie.ilikepiefoo2.kubejsborealis.pages.KubeJSHomePage;
 import pie.ilikepiefoo2.kubejsborealis.util.ReflectionHandler;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import static pie.ilikepiefoo2.kubejsborealis.KubeJSBorealis.MOD_ID;
 
@@ -39,12 +35,12 @@ public class KubeJSBorealis {
         MinecraftForge.EVENT_BUS.addListener(KubeJSEventHandler::onServerStart);
         MinecraftForge.EVENT_BUS.addListener(KubeJSEventHandler::bindingsEvent);
         MinecraftForge.EVENT_BUS.addListener(this::fmlServerStarting);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener((ModConfig.Loading e) -> ConfigHandler.onConfigLoad());
-        FMLJavaModLoadingContext.get().getModEventBus().addListener((ModConfig.Reloading e) -> ConfigHandler.onConfigLoad());
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(( ModConfigEvent.Loading e) -> ConfigHandler.onConfigLoad());
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(( ModConfigEvent.Reloading e) -> ConfigHandler.onConfigLoad());
     }
 
 
-    private void fmlServerStarting(FMLServerAboutToStartEvent event)
+    private void fmlServerStarting( ServerAboutToStartEvent event)
     {
         if(ConfigHandler.COMMON.reflectionHandler.get()) {
             try {
@@ -63,20 +59,5 @@ public class KubeJSBorealis {
     public static List<Class> getAllJSEvents()
     {
         return eventJSes;
-    }
-
-    /*
-     * This method is used to generate a list of all the EventJS class locations using reflection.
-     * This is purely for testing.
-     */
-    public static void main(String[] args)
-    {
-        Reflections reflections = new Reflections("dev.latvian.kubejs",new SubTypesScanner(false), new ResourcesScanner());
-        Set<Class<? extends EventJS>> classes = reflections.getSubTypesOf(EventJS.class);
-        for(Class eventClass : classes)
-        {
-            String link = "https://github.com/KubeJS-Mods/KubeJS/tree/master/common/src/main/java/"+eventClass.getName().replaceAll("\\.","/")+".java";
-            System.out.println(KubeJSHomePage.class.getSimpleName()+".knownEventJSClasses.put(\""+eventClass.getSimpleName()+"\", "+eventClass.getCanonicalName()+".class);");
-        }
     }
 }

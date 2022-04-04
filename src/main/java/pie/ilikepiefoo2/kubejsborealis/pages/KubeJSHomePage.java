@@ -1,8 +1,8 @@
 package pie.ilikepiefoo2.kubejsborealis.pages;
 
-import dev.latvian.kubejs.script.ScriptManager;
-import dev.latvian.kubejs.script.ScriptPack;
-import dev.latvian.kubejs.script.ScriptType;
+import dev.latvian.mods.kubejs.script.ScriptManager;
+import dev.latvian.mods.kubejs.script.ScriptPack;
+import dev.latvian.mods.kubejs.script.ScriptType;
 import dev.latvian.mods.rhino.NativeJavaArray;
 import dev.latvian.mods.rhino.NativeJavaMap;
 import dev.latvian.mods.rhino.NativeJavaObject;
@@ -177,7 +177,7 @@ public class KubeJSHomePage extends HTTPWebPage {
         previous.br();
     }
 
-    public static Map<String, Class> getAllProperties(ScriptManager manager)
+    public static Map<String, Class> getAllProperties( ScriptManager manager)
     {
         Map<String, Class> classMap = new TreeMap<String,Class>();
         LOGGER.debug("Now loading all properties of script manager of type "+manager.type.name);
@@ -188,7 +188,7 @@ public class KubeJSHomePage extends HTTPWebPage {
             for(Object propertyId : propertyIds)
             {
                 if(propertyId != null) {
-                    LOGGER.debug("Now loading propertyId of " + propertyId.toString());
+                    LOGGER.debug("Now loading propertyId of " + propertyId);
                     if (propertyId instanceof String) {
                         Class foundClass = getActualClass(pack.scope.get((String)propertyId,pack.scope));
                         LOGGER.debug("Now loading class "+foundClass.toGenericString());
@@ -212,7 +212,7 @@ public class KubeJSHomePage extends HTTPWebPage {
         if(dummyClass instanceof NativeJavaMap){
             unwrapped = ((NativeJavaMap) dummyClass).unwrap();
             if(unwrapped instanceof Class)
-                return (Class)unwrapped;
+                return (Class) unwrapped;
             return unwrapped.getClass();
         }
         if(dummyClass instanceof NativeJavaArray){
