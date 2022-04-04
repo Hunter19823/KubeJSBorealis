@@ -48,7 +48,7 @@ public class KubeJSHomePage extends HTTPWebPage {
         LOGGER.debug("Creating Documentation Home Page now...");
         body.img("https://kubejs.latvian.dev/logo_title.png").style("height", "7em");
         body.br();
-        body.h1("").a("KubeJS Documentation", homeURL);
+        body.h1("").a("KubeJS Borealis", homeURL);
 
         if(KubeJSBorealis.getAllJSEvents().size() > 0) {
             body.br();

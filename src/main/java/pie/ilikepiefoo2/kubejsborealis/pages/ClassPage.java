@@ -1,5 +1,6 @@
 package pie.ilikepiefoo2.kubejsborealis.pages;
 
+import dev.latvian.mods.rhino.mod.util.RemappingHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import pie.ilikepiefoo2.borealis.page.HTTPWebPage;
@@ -29,6 +30,7 @@ public class ClassPage extends HTTPWebPage {
     public ClassPage(Class subject)
     {
         this.subject = subject;
+
         this.addBackButton();
     }
 
@@ -55,7 +57,7 @@ public class ClassPage extends HTTPWebPage {
         // Logo and link to documentation homepage.
         body.img("https://kubejs.latvian.dev/logo_title.png").style("height", "7em");
         body.br();
-        body.h1("").a("KubeJS Documentation", homeURL);
+        body.h1("").a("KubeJS Borealis", homeURL);
         body.br();
 
         // Class modifiers and package name
@@ -114,7 +116,7 @@ public class ClassPage extends HTTPWebPage {
             if(includeInheritedConstructors)
                 rowTag.th().text("Declaring Class");
             constructors.sort(Comparator.comparing(Constructor::getName));
-            constructors.sort((subjectA, subjectB) -> this.compareDeclaringClass(subjectA,subjectB));
+            constructors.sort(this::compareAccess);
             for (Constructor constructor : constructors) {
                 addConstructor(tempTag, constructor);
             }
@@ -136,7 +138,7 @@ public class ClassPage extends HTTPWebPage {
             if(includeInheritedFields)
                 rowTag.th().text("Declaring Class");
             fields.sort(Comparator.comparing(Field::getName));
-            fields.sort((subjectA, subjectB) -> this.compareDeclaringClass(subjectA,subjectB));
+            fields.sort(this::compareAccess);
             for (Field field : fields) {
                 addField(tempTag, field);
             }
@@ -159,7 +161,8 @@ public class ClassPage extends HTTPWebPage {
 
 
             methods.sort(Comparator.comparing(Method::getName));
-            methods.sort((subjectA, subjectB) -> this.compareDeclaringClass(subjectA,subjectB));
+            methods.sort(this::compareAccess);
+            //methods.sort(this::compareDeclaringClass);
             for (Method method : methods) {
                 addMethod(tempTag, method);
             }
@@ -200,15 +203,13 @@ public class ClassPage extends HTTPWebPage {
         return previous;
     }
     */
-
-    public int compareDeclaringClass(Member subjectA, Member subjectB)
-    {
-        if (subjectA.getDeclaringClass().equals(subjectB))
+    public int compareAccess(Member subjectA, Member subjectB) {
+        boolean isPublicA = Modifier.isPublic(subjectA.getModifiers());
+        boolean isPublicB = Modifier.isPublic(subjectB.getModifiers());
+        if(isPublicA && isPublicB)
             return 0;
-        if (subjectA.getDeclaringClass().equals(this.subject))
-            return -1;
-        if (subjectB.getDeclaringClass().equals(this.subject))
-            return 1;
+        if(isPublicA || isPublicB)
+            return (isPublicA ? -1 : 1);
         return 0;
     }
 
@@ -216,12 +217,13 @@ public class ClassPage extends HTTPWebPage {
     {
         return linkType(previous,subject,getNameOfClass(subject));
     }
+
     public static Tag linkType(Tag previous, Class<?> subject, String name)
     {
         Tag result = previous;
         Class<?> referenceClass = subject;
-        if(subject.isArray()) {
-            referenceClass = subject.getComponentType();
+        while(referenceClass.isArray()) {
+            referenceClass = referenceClass.getComponentType();
         }
         if(!referenceClass.isPrimitive()){
             result = result.a(name,getLinkToClass(referenceClass));
@@ -239,25 +241,35 @@ public class ClassPage extends HTTPWebPage {
             return homeURL+subject.getName();
         return "";
     }
+
     public static String getNameOfClass(Class<?> subject)
     {
         if(subject.isArray())
             return getNameOfClass(subject.getComponentType())+"[]";
+        var remap = RemappingHelper.getMinecraftRemapper().getMappedClass(subject);
+        if(remap != null)
+            return remap.substring(remap.lastIndexOf('.')+1);
         return subject.getSimpleName();
     }
+
     public static void linkParameters(Tag previous, Parameter[] parameters, Type[] genericTypes)
     {
         Tag combine;
         for(int i=0; i<parameters.length; i++){
             Parameter parameter = parameters[i];
             combine = previous.span(" ");
-            linkType(combine,parameter.getType()).tooltip().style("display","inline").text(genericTypes[i].getTypeName());
+            if(genericTypes.length == parameters.length) {
+                linkType(combine, parameter.getType()).tooltip().style("display", "inline").text(genericTypes[ i ].getTypeName());
+            }else{
+                linkType(combine, parameter.getType()).tooltip().style("display", "inline");
+            }
             combine.text(" ");
             combine.text(parameter.getName());
             if(i != parameters.length-1)
                 previous.text(",");
         }
     }
+
     public static void addConstructor(Tag table, Constructor constructor)
     {
         Tag methodTag;
@@ -279,17 +291,21 @@ public class ClassPage extends HTTPWebPage {
         if(includeInheritedConstructors)
             row.td().a(constructor.getDeclaringClass().getName(),getLinkToClass(constructor.getDeclaringClass()));
     }
+
     public static void addField(Tag table, Field field)
     {
         Tag row = table.tr();
         addDataAttributes(row,field);
+        String properName = getFieldName(field.getDeclaringClass(),field);
 
         Tag td = row.td();
 
         String toolTip = compileAnnotationToolTip(field.getAnnotations());
+        if(!properName.equals(field.getName()))
+            toolTip += "Original Name: "+field.getName()+"\n";
         Tag name = td.text(Modifier.toString(field.getModifiers())+" ");
         linkType(name,field.getType());
-        name.span(" " + field.getName());
+        name.span(" " + properName);
         if(toolTip.length() > 0)
             name.tooltip().style("display","inline").text(toolTip);
 
@@ -299,12 +315,14 @@ public class ClassPage extends HTTPWebPage {
         if(includeInheritedFields)
             row.td().a(field.getDeclaringClass().getName(),getLinkToClass(field.getDeclaringClass()));
 
-        //linkType(row.td(),field.getType());
     }
+
     public static void addMethod(Tag table, Method method)
     {
         Tag row = table.tr();
         addDataAttributes(row,method);
+        String properName = getMethodName(method.getDeclaringClass(),method);
+
         Tag column = row.td();
 
         // Access Modifiers
@@ -319,8 +337,12 @@ public class ClassPage extends HTTPWebPage {
         }
 
         // Method name
-        String methodName = cleanseLambdaName(method.getName());
+        String methodName = cleanseLambdaName(properName);
+
         String toolTip = compileAnnotationToolTip(method.getAnnotations());
+        if(!method.getName().equals(properName))
+            toolTip += "Original Name: "+method.getName()+"\n";
+
         if(toolTip.length() > 0) {
             column.span(methodName).tooltip().style("display","inline").text(toolTip);
         }else{
@@ -362,25 +384,25 @@ public class ClassPage extends HTTPWebPage {
         }
     }
     public static void addDataAttributes(Tag row, Constructor constructor){
-        row.attr("data-declaring-class",constructor.getDeclaringClass().getTypeName());
-        row.attr("data-name",cleanseLambdaName(constructor.getName()));
-        row.attr("data-parameters-count",constructor.getParameterCount()+"");
         addDataAttributes(row,constructor.getModifiers());
+        //row.attr("data-declaring-class",constructor.getDeclaringClass().getTypeName());
+        //row.attr("data-name",cleanseLambdaName(constructor.getName()));
+        row.attr("data-parameters-count",constructor.getParameterCount()+"");
     }
     public static void addDataAttributes(Tag row, Method method){
-        row.attr("data-declaring-class",method.getDeclaringClass().getTypeName());
-        row.attr("data-name",cleanseLambdaName(method.getName()));
+        addDataAttributes(row,method.getModifiers());
+        row.attr("data-declaring-class",getNameOfClass(method.getDeclaringClass()));
+        //row.attr("data-name",cleanseLambdaName(method.getName()));
         row.attr("data-return-type-generic",method.getGenericReturnType().getTypeName());
         row.attr("data-parameters-count",method.getParameterCount()+"");
         addDataAttribute(row,"data-return-type", method.getReturnType());
-        addDataAttributes(row,method.getModifiers());
     }
     public static void addDataAttributes(Tag row, Field field){
-        row.attr("data-declaring-class",field.getDeclaringClass().getTypeName());
-        row.attr("data-name",cleanseLambdaName(field.getName()));
+        addDataAttributes(row,field.getModifiers());
+        row.attr("data-declaring-class",getNameOfClass(field.getDeclaringClass()));
+        //row.attr("data-name",cleanseLambdaName(getFieldName(field.getDeclaringClass(),field)));
         row.attr("data-return-type-generic",field.getGenericType().getTypeName());
         addDataAttribute(row,"data-return-type", field.getType());
-        addDataAttributes(row,field.getModifiers());
     }
     public static void addDataAttribute(Tag row, String key, Class<?> type)
     {
@@ -414,25 +436,32 @@ public class ClassPage extends HTTPWebPage {
         }else{
             row.attr("data-static", "false");
         }
-        if(Modifier.isTransient(mods)) {
-            row.attr("data-transient", "true");
-        }else{
-            row.attr("data-transient", "false");
-        }
-        if(Modifier.isSynchronized(mods)) {
-            row.attr("data-synchronized", "true");
-        }else{
-            row.attr("data-synchronized", "false");
-        }
-        if(Modifier.isStrict(mods)) {
-            row.attr("data-strict", "true");
-        }else{
-            row.attr("data-strict", "false");
-        }
-        if(Modifier.isVolatile(mods)) {
-            row.attr("data-volatile", "true");
-        }else{
-            row.attr("data-volatile", "false");
-        }
+//        if(Modifier.isTransient(mods)) {
+//            row.attr("data-transient", "true");
+//        }else{
+//            row.attr("data-transient", "false");
+//        }
+//        if(Modifier.isSynchronized(mods)) {
+//            row.attr("data-synchronized", "true");
+//        }else{
+//            row.attr("data-synchronized", "false");
+//        }
+//        if(Modifier.isStrict(mods)) {
+//            row.attr("data-strict", "true");
+//        }else{
+//            row.attr("data-strict", "false");
+//        }
+//        if(Modifier.isVolatile(mods)) {
+//            row.attr("data-volatile", "true");
+//        }else{
+//            row.attr("data-volatile", "false");
+//        }
+    }
+
+    public static String getFieldName(Class<?> type, Field field) {
+        return RemappingHelper.getMinecraftRemapper().getMappedField(type, field);
+    }
+    public static String getMethodName(Class<?> type, Method method) {
+        return RemappingHelper.getMinecraftRemapper().getMappedMethod(type, method);
     }
 }
