@@ -9,12 +9,20 @@ import pie.ilikepiefoo2.borealis.tag.Tag;
 import pie.ilikepiefoo2.kubejsborealis.ConfigHandler;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
-import static pie.ilikepiefoo2.kubejsborealis.pages.KubeJSHomePage.*;
+import static pie.ilikepiefoo2.kubejsborealis.pages.KubeJSHomePage.addClassTable;
+import static pie.ilikepiefoo2.kubejsborealis.pages.KubeJSHomePage.getTableSortScript;
+import static pie.ilikepiefoo2.kubejsborealis.pages.KubeJSHomePage.homeURL;
 
 /**
  * @author ILIKEPIEFOO2

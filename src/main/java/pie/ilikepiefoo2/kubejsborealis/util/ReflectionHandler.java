@@ -107,9 +107,11 @@ public class ReflectionHandler {
     {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         assert classLoader != null;
+
         eventClassNames = findClassesWithinDir(directory,generateBlacklistRegex(ConfigHandler.COMMON.blacklistedPackages.get().stream().map(String::new).collect(Collectors.toList())),ConfigHandler.COMMON.printAllClasses.get());
         eventClassNames = eventClassNames.stream().distinct().collect(Collectors.toList());
     }
+
     private static String generateBlacklistRegex(List<String> blacklist)
     {
         String output = "";

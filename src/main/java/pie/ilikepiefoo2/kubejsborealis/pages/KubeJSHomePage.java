@@ -21,9 +21,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.List;
 
 import static pie.ilikepiefoo2.kubejsborealis.pages.ClassPage.compileAnnotationToolTip;
 import static pie.ilikepiefoo2.kubejsborealis.pages.ClassPage.linkType;
@@ -53,6 +53,10 @@ public class KubeJSHomePage extends HTTPWebPage {
         if(KubeJSBorealis.getAllJSEvents().size() > 0) {
             body.br();
             addClassTable(body.table(),"Scanned EventJS Class",KubeJSBorealis.getAllJSEvents());
+        }
+        if(KubeJSBorealis.getAllForgeEvents().size() > 0) {
+            body.br();
+            addClassTable(body.table(),"Scanned Forge Event Class",KubeJSBorealis.getAllForgeEvents());
         }
         if(global.size() > 0) {
             body.br();

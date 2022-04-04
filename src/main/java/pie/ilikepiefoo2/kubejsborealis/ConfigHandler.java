@@ -67,7 +67,7 @@ public class ConfigHandler {
             builder.push("experimental");
                 builder.push("Reflection Handler");
                     builder.comment("Enable Reflection Handler?",
-                            "The reflection handler tries to find all classes that extend EventJS and add them to the KubeJS homepage.",
+                            "The reflection handler tries to find all classes that extend EventJS and Forge's Event and adds them to the KubeJS homepage.",
                             "(Experimental Feature that can crash JVM in some instances and not produce a crash report)");
                     reflectionHandler = builder
                             .define("reflectionHandler",false);
