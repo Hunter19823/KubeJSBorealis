@@ -151,12 +151,11 @@ dependencies {
     //modImplementation("dev.latvian.mods:kubejs-forge:${kubejs_version}")
 
     // KubeJS
-    // ForgeGradle
-    implementation ("dev.latvian.mods:kubejs-forge:${kubejs_version}")
+    implementation fg.deobf("dev.latvian.mods:kubejs-forge:${kubejs_version}")
 
     // these two are unfortunately needed since fg.deobf doesn't respect transitive dependencies as of yet
-    implementation ("dev.latvian.mods:rhino-forge:${rhino_version}")
-    implementation ("me.shedaniel:architectury-forge:${arch_version}")
+    implementation fg.deobf("dev.latvian.mods:rhino-forge:${rhino_version}")
+    implementation fg.deobf("dev.architectury:architectury-forge:${architectury_version}")
 
     // Reflections
 }
@@ -167,9 +166,9 @@ jar {
         attributes([
                 "Specification-Title"     : project.mod_id,
                 "Specification-Vendor"    : project.mod_author,
-                "Specification-Version"   : "1",
-                "Implementation-Title"    : project.name,
-                "Implementation-Version"  : "${version}",
+                "Specification-Version"   : "1", // We are version 1 of ourselves
+                "Implementation-Title"    : project.mod_name,
+                "Implementation-Version"  : project.jar.archiveVersion,
                 "Implementation-Vendor"   : project.mod_author,
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
@@ -200,7 +199,7 @@ if (ENV.CURSEFORGE_KEY) {
             addGameVersion "Forge"
             addGameVersion "${minecraft_version}"
             relations {
-                requiredDependency 'kubejs-forge'
+                requiredDependency 'kubejs'
                 requiredDependency 'borealis'
             }
         }

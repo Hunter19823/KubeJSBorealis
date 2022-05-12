@@ -1,6 +1,7 @@
 package pie.ilikepiefoo2.kubejsborealis;
 
 import dev.latvian.mods.kubejs.event.EventJS;
+import dev.latvian.mods.kubejs.util.KubeJSPlugins;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerAboutToStartEvent;
 import net.minecraftforge.eventbus.api.Event;
@@ -35,7 +36,6 @@ public class KubeJSBorealis {
         MinecraftForge.EVENT_BUS.addListener(KubeJSEventHandler::homePageEvent);
         MinecraftForge.EVENT_BUS.addListener(KubeJSEventHandler::onPageEvent);
         MinecraftForge.EVENT_BUS.addListener(KubeJSEventHandler::onServerStart);
-        MinecraftForge.EVENT_BUS.addListener(KubeJSEventHandler::bindingsEvent);
         MinecraftForge.EVENT_BUS.addListener(this::fmlServerStarting);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(( ModConfigEvent.Loading e) -> ConfigHandler.onConfigLoad());
         FMLJavaModLoadingContext.get().getModEventBus().addListener(( ModConfigEvent.Reloading e) -> ConfigHandler.onConfigLoad());
