@@ -15,7 +15,9 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -211,6 +213,8 @@ public class ClassPage extends HTTPWebPage {
         return previous;
     }
     */
+
+
     public int compareAccess(Member subjectA, Member subjectB) {
         boolean isPublicA = Modifier.isPublic(subjectA.getModifiers());
         boolean isPublicB = Modifier.isPublic(subjectB.getModifiers());
@@ -221,26 +225,58 @@ public class ClassPage extends HTTPWebPage {
         return 0;
     }
 
-    public static Tag linkType(Tag previous, Class<?> subject)
+    public static Tag linkType(Tag previous, Type subject)
     {
         return linkType(previous,subject,getNameOfClass(subject));
     }
 
-    public static Tag linkType(Tag previous, Class<?> subject, String name)
+    public static Tag linkType(Tag previous, Type subject, String name)
     {
         Tag result = previous;
-        Class<?> referenceClass = subject;
-        while(referenceClass.isArray()) {
-            referenceClass = referenceClass.getComponentType();
-        }
-        if(!referenceClass.isPrimitive()){
-            result = result.a(name,getLinkToClass(referenceClass));
+        if(subject instanceof Class<?> referenceClass) {
+            while (referenceClass.isArray()) {
+                referenceClass = referenceClass.getComponentType();
+            }
+            if (!referenceClass.isPrimitive()) {
+                result = result.a(name, getLinkToClass(referenceClass));
+                result = linkGeneric(result, subject);
+            }
+            else {
+                result = result.span(name);
+            }
+        }else if(subject instanceof ParameterizedType referenceClass) {
+            if(referenceClass.getRawType() instanceof Class<?> rawClass) {
+                result = result.a(name, getLinkToClass(rawClass));
+                result = linkGeneric(result, subject);
+            }else {
+                result = result.span(name);
+                result = linkGeneric(result, subject);
+            }
         }else{
             result = result.span(name);
         }
 
         return result;
     }
+    private static Tag linkGeneric(Tag previous, Type subject) {
+        if(subject == null)
+            return previous;
+        if(subject instanceof ParameterizedType parameterizedType){
+            int count = 0;
+            for(var type : parameterizedType.getActualTypeArguments()){
+                if(count == 0)
+                    previous.parent.text("<");
+                else
+                    previous.parent.text(",");
+                count++;
+                previous = linkType(previous.parent, type);
+            }
+            if(count > 0)
+                previous.parent.text(">");
+        }
+        return previous;
+    }
+
     public static String getLinkToClass(Class<?> subject)
     {
         if(subject.isArray())
@@ -250,24 +286,31 @@ public class ClassPage extends HTTPWebPage {
         return "";
     }
 
-    public static String getNameOfClass(Class<?> subject)
+    public static String getNameOfClass(Type subject)
     {
-        if(subject.isArray())
-            return getNameOfClass(subject.getComponentType())+"[]";
-        var remap = RemappingHelper.getMinecraftRemapper().getMappedClass(subject);
-        if(remap != null)
-            return remap.substring(remap.lastIndexOf('.')+1);
-        return subject.getSimpleName();
+        if(subject instanceof Class<?> referenceClass) {
+            if(referenceClass.isArray())
+                return getNameOfClass(referenceClass.getComponentType())+"[]";
+            var remap = RemappingHelper.getMinecraftRemapper().getMappedClass(referenceClass);
+            if(remap != null && !remap.isEmpty())
+                return remap.substring(remap.lastIndexOf('.')+1);
+            return referenceClass.getSimpleName();
+        }else if(subject instanceof ParameterizedType referenceClass) {
+            return getNameOfClass(referenceClass.getRawType());
+        }else {
+            return subject.getTypeName();
+        }
     }
 
     public static void linkParameters(Tag previous, Parameter[] parameters, Type[] genericTypes)
     {
         Tag combine;
-        for(int i=0; i<parameters.length; i++){
+        for(int i=0; i<genericTypes.length; i++){
             Parameter parameter = parameters[i];
+            var type = genericTypes[i];
             combine = previous.span(" ");
             if(genericTypes.length == parameters.length) {
-                linkType(combine, parameter.getType()).tooltip().style("display", "inline").text(genericTypes[ i ].getTypeName());
+                linkType(combine, type).tooltip().style("display", "inline").text(type.getTypeName());
             }else{
                 linkType(combine, parameter.getType()).tooltip().style("display", "inline");
             }
@@ -312,13 +355,20 @@ public class ClassPage extends HTTPWebPage {
         if(!properName.equals(field.getName()))
             toolTip += "Original Name: "+field.getName()+"\n";
         Tag name = td.text(Modifier.toString(field.getModifiers())+" ");
-        linkType(name,field.getType());
+        try {
+            linkType(name, field.getGenericType());
+        } catch (Exception e) {
+            linkType(name,field.getType());
+        }
         name.span(" " + properName);
         if(toolTip.length() > 0)
             name.tooltip().style("display","inline").text(toolTip);
 
-
-        linkType(row.td(),field.getType(),field.getGenericType().getTypeName());
+        try {
+            linkType(row.td(), field.getGenericType());
+        } catch (Exception e) {
+            linkType(row.td(),field.getType(),field.getGenericType().getTypeName());
+        }
 
         if(includeInheritedFields)
             row.td().a(field.getDeclaringClass().getName(),getLinkToClass(field.getDeclaringClass()));
@@ -338,7 +388,11 @@ public class ClassPage extends HTTPWebPage {
 
         // Return Type
         if(!method.getReturnType().getTypeName().equals(" void ")){
-            linkType(column,method.getReturnType()).tooltip().style("display","inline").text(method.getGenericReturnType().getTypeName());
+            try {
+                linkType(column, method.getGenericReturnType()).tooltip().style("display", "inline").text(method.getGenericReturnType().getTypeName());
+            } catch (Exception e) {
+                linkType(column, method.getReturnType()).tooltip().style("display", "inline").text(method.getGenericReturnType().getTypeName());
+            }
             column.text(" ");
         }else{
             column = column.span("void");
@@ -367,7 +421,11 @@ public class ClassPage extends HTTPWebPage {
         column.text(")");
 
         // Return Type Column
-        linkType(row.td(),method.getReturnType(),method.getGenericReturnType().getTypeName());
+        try{
+            linkType(row.td(), method.getGenericReturnType());
+        }catch(Exception e){
+            linkType(row.td(),method.getReturnType(),method.getGenericReturnType().getTypeName());
+        }
 
         // Inherited Methods
         if(includeInheritedMethods)
@@ -467,9 +525,15 @@ public class ClassPage extends HTTPWebPage {
     }
 
     public static String getFieldName(Class<?> type, Field field) {
-        return RemappingHelper.getMinecraftRemapper().getMappedField(type, field);
+        String out = RemappingHelper.getMinecraftRemapper().getMappedField(type, field);
+        if(out == null || out.isEmpty())
+            out = field.getName();
+        return out;
     }
     public static String getMethodName(Class<?> type, Method method) {
-        return RemappingHelper.getMinecraftRemapper().getMappedMethod(type, method);
+        String out = RemappingHelper.getMinecraftRemapper().getMappedMethod(type, method);
+        if(out == null || out.isEmpty())
+            out = method.getName();
+        return out;
     }
 }

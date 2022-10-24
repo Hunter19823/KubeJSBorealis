@@ -50,10 +50,10 @@ public class ConfigHandler {
                         .define("includeInheritedConstructors",false);
                 includeInheritedFields = builder
                         .comment("Should every ClassPage include inherited Fields as well defined ones?")
-                        .define("includeInheritedFields",false);
+                        .define("includeInheritedFields",true);
                 includeInheritedMethods = builder
                         .comment("Should every ClassPage include inherited Methods as well defined ones?")
-                        .define("includeInheritedMethods",false);
+                        .define("includeInheritedMethods",true);
                 includeInheritedClasses = builder
                         .comment("Should every ClassPage include inherited Classes as well defined ones?")
                         .define("includeInheritedClasses",false);
@@ -75,7 +75,18 @@ public class ConfigHandler {
                     .comment("List of blacklisted packages to load classes from for the reflection handler.",
                             "If you have AE2 installed and experiencing crashing, try adding \"appeng\".")
                     .defineList("blacklistedPackages",
-                            Collections.emptyList(),
+                            List.of("mixin",
+                                    "RecipeManager",
+                                    "rhinofile",
+                                    "rhinodata",
+                                    "appeng",
+                                    "integration",
+                                    "compat",
+                                    "mna.entities",
+                                    "mclib.math",
+                                    "recipe.manager",
+                                    "recipe.handler"
+                                    ),
                             s -> s instanceof String
                     );
                 builder.pop();

@@ -2,6 +2,7 @@ package pie.ilikepiefoo2.kubejsborealis.util;
 
 
 import dev.latvian.mods.kubejs.event.EventJS;
+import net.minecraftforge.eventbus.api.Event;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -11,9 +12,12 @@ import pie.ilikepiefoo2.kubejsborealis.pages.ClassPage;
 import pie.ilikepiefoo2.kubejsborealis.pages.KubeJSHomePage;
 
 import javax.lang.model.type.NullType;
+import java.awt.event.ItemEvent;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
@@ -82,7 +86,7 @@ public class ReflectionHandler {
             LOGGER.info("No configuration currently exists, finding all classes in current thread...");
 
             classes = eventClassNames.stream().map((className) -> {
-                Class tempClass = NullType.class;
+                Class tempClass;
                 try {
                     if(ConfigHandler.COMMON.printAllClasses.get())
                         LOGGER.info("Attempting To Load {}",className);
@@ -91,6 +95,8 @@ public class ReflectionHandler {
                         tempClass = NullType.class;
                 } catch (Throwable e) {
                     // If it wasn't loaded just ignore it
+                    LOGGER.warn("Failed to load class {}, perhaps add this package to the blacklist in the config.", className);
+                    return NullType.class;
                 }
                 return tempClass;
             }).distinct().collect(Collectors.toList());
@@ -107,8 +113,10 @@ public class ReflectionHandler {
     {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         assert classLoader != null;
-
-        eventClassNames = findClassesWithinDir(directory,generateBlacklistRegex(ConfigHandler.COMMON.blacklistedPackages.get().stream().map(String::new).collect(Collectors.toList())),ConfigHandler.COMMON.printAllClasses.get());
+        String blacklist = generateBlacklistRegex(ConfigHandler.COMMON.blacklistedPackages.get().stream().map(String::new).collect(Collectors.toList()));
+        if(eventClassNames == null)
+            eventClassNames = new ArrayList<>();
+        eventClassNames.addAll(findClassesWithinDir(directory,blacklist,ConfigHandler.COMMON.printAllClasses.get()));
         eventClassNames = eventClassNames.stream().distinct().collect(Collectors.toList());
     }
 
@@ -116,13 +124,9 @@ public class ReflectionHandler {
     {
         String output = "";
         if(blacklist.size()>0) {
-            output = "(";
-            for (int i = 0; i < blacklist.size(); i++) {
-                output += blacklist.get(i).replace(".","\\.");
-                if (i != blacklist.size() - 1)
-                    output += "|";
-            }
-            output += ").*";
+            // Create a regex that matches anything containing the blacklisted packages.
+            output = blacklist.stream().map((blacklistedPackage) -> blacklistedPackage.replace(".", "\\.")).collect(Collectors.joining("|"));
+            output = ".*(" + output + ").*";
         }
         LOGGER.info("Generated Blacklist Regex: \"{}\"",output);
         return output;
@@ -138,12 +142,11 @@ public class ReflectionHandler {
                 output.addAll(findClassesWithinDir(file, blackListRegex,debug));
             }
         }else{
-
             if(dir.getName().endsWith(".jar")){
                 try {
                     new JarFile(dir).stream().forEach(jarEntry -> {
                         String name = jarEntry.getName().replace("/", ".");
-                        if(!name.matches(blackListRegex)) {
+                        if(name.toLowerCase().contains("event") && !name.matches(blackListRegex)) {
                             if(debug) LOGGER.info("File Passed Regex: {}",name);
                             if (name.endsWith(".class")) {
                                 try {
@@ -156,7 +159,9 @@ public class ReflectionHandler {
                         }
 
                     });
-                } catch (Throwable e) {}
+                } catch (Throwable e) {
+                    LOGGER.error("Error while reading jar file: {}",dir.getName(), e);
+                }
             }
         }
         return output;
